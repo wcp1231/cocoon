@@ -57,7 +57,7 @@ func (s *tcpStream) Accept(packet *rpc.TcpPacket) {
 	s.nextSeq = packet.Seq + 1
 	dataMsg := tcpReaderDataMsg{
 		bytes:     packet.Payload,
-		timestamp: packet.Timestame,
+		timestamp: packet.Timestamp,
 	}
 	if packet.IsRequest() {
 		s.requestReader.msgQueue <- dataMsg

@@ -13,7 +13,7 @@ type TcpPacket struct {
 	IsOutgoing  bool
 	Direction   *model.Direction
 	Seq         uint64
-	Timestame   time.Time
+	Timestamp   time.Time
 	Payload     []byte
 }
 

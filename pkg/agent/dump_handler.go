@@ -128,7 +128,7 @@ func (d *DumpHandler) dump(b []byte, direction model.Direction) error {
 		IsOutgoing:  true, // TODO 这里暂时都是向外的流量
 		Direction:   &direction,
 		Seq:         d.seqNum,
-		Timestame:   time.Now(),
+		Timestamp:   time.Now(),
 		Payload:     b,
 	}
 	req := rpc.UploadReq{
