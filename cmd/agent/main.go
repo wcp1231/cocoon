@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 const (
@@ -23,6 +24,7 @@ var (
 	mockCmd *flag.FlagSet
 
 	appname string
+	session string
 	listen  string
 	remote  string
 
@@ -32,6 +34,7 @@ var (
 func init() {
 	dumpCmd = flag.NewFlagSet(DUMP_CMD, flag.ExitOnError)
 	dumpCmd.StringVar(&appname, "app", "Application", "Application name")
+	dumpCmd.StringVar(&appname, "session", "", "Application session")
 	dumpCmd.StringVar(&listen, "listen", "0.0.0.0:1820", "Listen address")
 	dumpCmd.StringVar(&remote, "remote", "", "Remote agent address")
 	mockCmd = flag.NewFlagSet(MOCK_CMD, flag.ExitOnError)
@@ -59,9 +62,14 @@ func main() {
 			os.Exit(1)
 		}
 
+		ensureSession()
+
 		logger.Info("Start proxy mode.",
-			zap.String("app", appname), zap.String("listen", listen), zap.String("remote", remote))
-		s := agent.NewServer(context.Background(), logger, appname, remote, listenAddr)
+			zap.String("app", appname),
+			zap.String("session", session),
+			zap.String("listen", listen),
+			zap.String("remote", remote))
+		s := agent.NewServer(context.Background(), logger, appname, session, remote, listenAddr)
 		go s.Start()
 
 		signalChan := make(chan os.Signal, 1)
@@ -94,5 +102,11 @@ func main() {
 	default:
 		fmt.Printf("Expected 'dump' or 'mock' subcommand")
 		os.Exit(1)
+	}
+}
+
+func ensureSession() {
+	if session == "" {
+		session = time.Now().Format("2006-01-02_15:04:05")
 	}
 }

@@ -15,6 +15,7 @@ import (
 type Server struct {
 	logger     *zap.Logger
 	appname    string
+	session    string
 	listenAddr *net.TCPAddr
 	rpcClient  *client.RpcClient
 	ctx        context.Context
@@ -25,7 +26,7 @@ type Server struct {
 	listener   *net.TCPListener
 }
 
-func NewServer(ctx context.Context, logger *zap.Logger, appname, remote string, listenAddr *net.TCPAddr) *Server {
+func NewServer(ctx context.Context, logger *zap.Logger, appname, session, remote string, listenAddr *net.TCPAddr) *Server {
 	innerCtx, shutdown := context.WithCancel(ctx)
 	wg := &sync.WaitGroup{}
 	closedChan := make(chan struct{})
@@ -35,6 +36,7 @@ func NewServer(ctx context.Context, logger *zap.Logger, appname, remote string, 
 	return &Server{
 		logger:     logger,
 		appname:    appname,
+		session:    session,
 		listenAddr: listenAddr,
 		rpcClient:  rpcClient,
 		ctx:        innerCtx,
@@ -58,6 +60,8 @@ func (s *Server) Start() error {
 		}
 		close(s.ClosedChan)
 	}()
+
+	s.rpcClient.ClientPostStart(s.ctx, s.appname, s.session)
 
 	for {
 		conn, err := s.listener.AcceptTCP()

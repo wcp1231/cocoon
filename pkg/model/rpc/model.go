@@ -26,10 +26,19 @@ func (t *TcpPacket) IsRequest() bool {
 }
 
 type UploadReq struct {
-	Appname string
+	Session string
 	Packet  *TcpPacket
 }
 
 type UploadResp struct {
 	Count int
+}
+
+type PostStartReq struct {
+	Appname string
+	Session string
+}
+
+type PostStartResp struct {
+	Error error
 }

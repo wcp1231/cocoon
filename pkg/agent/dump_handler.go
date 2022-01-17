@@ -132,7 +132,7 @@ func (d *DumpHandler) dump(b []byte, direction model.Direction) error {
 		Payload:     b,
 	}
 	req := rpc.UploadReq{
-		Appname: d.server.appname,
+		Session: d.server.session,
 		Packet:  &packte,
 	}
 	d.server.rpcClient.Upload(d.ctx, &req)

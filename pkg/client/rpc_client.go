@@ -19,8 +19,19 @@ func NewRpcClient(remote string) *RpcClient {
 	}
 }
 
-func (r *RpcClient) GenerateUploadRequest() {
-
+func (r *RpcClient) ClientPostStart(ctx context.Context, appname, session string) {
+	req := &rpc.PostStartReq{
+		Appname: appname,
+		Session: session,
+	}
+	resp := &rpc.PostStartResp{}
+	err := r.client.Call(ctx, "ClientPostStart", req, resp)
+	if err != nil {
+		// TODO
+	}
+	if resp.Error != nil {
+		// TODO
+	}
 }
 
 func (r *RpcClient) Upload(ctx context.Context, req *rpc.UploadReq) {

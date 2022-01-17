@@ -1,9 +1,11 @@
 package server
 
 import (
+	"cocoon/pkg/db"
 	"cocoon/pkg/model/rpc"
 	"cocoon/pkg/model/traffic"
 	"cocoon/pkg/tcp"
+	"context"
 	"github.com/smallnest/rpcx/server"
 	"go.uber.org/zap"
 )
@@ -12,21 +14,21 @@ type RpcServer struct {
 	server *server.Server
 	logger *zap.Logger
 
-	//dissectorService *dissector.DissectService
+	database   *db.Database
 	tcpManager *tcp.TcpManager
 }
 
-func NewRpcServer(logger *zap.Logger) *RpcServer {
+func NewRpcServer(logger *zap.Logger, dbUri string) *RpcServer {
 	rpcxServer := server.NewServer()
 	resultC := make(chan *traffic.StreamItem, 1024)
-	//dissectService := dissector.NewDissectService(logger)
+	database := db.NewDatabase(context.Background(), logger, dbUri)
 	tcpManager := tcp.NewTcpManager(logger, resultC)
 
 	rpcServer := &RpcServer{
 		server:     rpcxServer,
 		logger:     logger,
+		database:   database,
 		tcpManager: tcpManager,
-		//dissectorService: dissectService,
 	}
 
 	handler := NewCocoonHandler(logger, rpcServer)
@@ -35,6 +37,5 @@ func NewRpcServer(logger *zap.Logger) *RpcServer {
 }
 
 func (r *RpcServer) Start(listen string) error {
-	//r.dissectorService.Start()
 	return r.server.Serve("tcp", listen)
 }
