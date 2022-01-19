@@ -2,6 +2,7 @@ package dissector
 
 import (
 	"cocoon/pkg/dissector/http"
+	"cocoon/pkg/dissector/mongo"
 	"cocoon/pkg/dissector/redis"
 	"cocoon/pkg/model/api"
 )
@@ -31,6 +32,7 @@ func NewDissectProcessor(tcpId string, isRequest bool, resultC chan *api.Dissect
 	var dissectors []api.Dissector
 	dissectors = append(dissectors, redis.NewDissector(resultC))
 	dissectors = append(dissectors, http.NewDissector(resultC))
+	dissectors = append(dissectors, mongo.NewDissector(resultC))
 	dissectors = append(dissectors, newDefaultDissector(resultC))
 	return &DissectProcessor{
 		ID:        tcpId,

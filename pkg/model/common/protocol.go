@@ -8,7 +8,7 @@ type Protocol struct {
 }
 
 func (p *Protocol) String() string {
-	return fmt.Sprintf("Proto[%s]", p.Name)
+	return fmt.Sprintf("P[%s]", p.Name)
 }
 
 var (
@@ -22,6 +22,10 @@ var (
 	}
 	PROTOCOL_REDIS = &Protocol{
 		Name:    "Redis",
+		Version: "0",
+	}
+	PROTOCOL_MONGO = &Protocol{
+		Name:    "Mongo",
 		Version: "0",
 	}
 )

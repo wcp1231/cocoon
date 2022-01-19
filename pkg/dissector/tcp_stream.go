@@ -38,7 +38,7 @@ func newTcpStream(logger *zap.Logger, connectionInfo *common.ConnectionInfo, res
 	stream.requestReader = requestReader
 	stream.responseReader = responseReader
 
-	stream.wg.Add(3)
+	stream.wg.Add(2)
 	go requestReader.run(&stream.wg)
 	go responseReader.run(&stream.wg)
 	go stream.handleDissectResult()
@@ -67,15 +67,16 @@ func (s *tcpStream) Accept(packet *common.TcpPacket) {
 func (s *tcpStream) Close() {
 	s.requestReader.Close()
 	s.responseReader.Close()
+	s.wg.Wait()
+	close(s.dissectC)
 }
 
 func (s *tcpStream) handleDissectResult() {
-	defer s.wg.Done()
 	for {
 		diss, more := <-s.dissectC
-		s.logger.Info("Dissect result", zap.String("req", diss.String()))
 		if !more {
 			break
 		}
+		s.logger.Info("Dissect result", zap.String("req", diss.String()))
 	}
 }

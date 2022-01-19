@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"cocoon/pkg/model/api"
 	"cocoon/pkg/model/common"
+	"io"
 )
 
 type DefaultDissector struct {
@@ -24,7 +25,7 @@ func (d *DefaultDissector) Dissect(reader api.TcpReader, isRequest bool) error {
 	br := reader.BufferReader()
 	buffered := d.tryRead(br)
 	if buffered <= 0 {
-		return nil
+		return io.EOF
 	}
 	raw := make([]byte, buffered)
 	br.Read(raw)
