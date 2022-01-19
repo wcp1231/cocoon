@@ -3,30 +3,27 @@ package dissector
 import (
 	"cocoon/pkg/dissector/http"
 	"cocoon/pkg/model/api"
-	"sync"
 )
 
 type DissectProcessor struct {
-	sync.Mutex
 	ID        string
 	isRequest bool
 	resultC   chan *api.DissectResult
 
-	maybeDissector api.Dissector
-	dissectors     []api.Dissector
+	dissectorIdx int
+	dissectors   []api.Dissector
 
 	nextSeq uint64
 }
 
 func (d *DissectProcessor) Process(b api.TcpReader) {
-	defer d.Unlock()
-	d.Lock()
-	if d.maybeDissector == nil {
-		// 链接重建，重置 dissector
-		d.maybeDissector = d.findMatchedDissector(b)
+	for d.dissectorIdx < len(d.dissectors) {
+		err := d.dissectors[d.dissectorIdx].Dissect(b, d.isRequest)
+		if err != nil {
+			b.Reset()
+			d.dissectorIdx += 1
+		}
 	}
-
-	d.maybeDissector.Dissect(b, d.isRequest)
 }
 
 func (d *DissectProcessor) findMatchedDissector(b api.TcpReader) api.Dissector {
@@ -48,6 +45,7 @@ func NewDissectProcessor(tcpId string, isRequest bool, resultC chan *api.Dissect
 		isRequest: isRequest,
 		resultC:   resultC,
 
-		dissectors: dissectors,
+		dissectorIdx: 0,
+		dissectors:   dissectors,
 	}
 }

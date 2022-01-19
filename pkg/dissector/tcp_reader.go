@@ -1,8 +1,7 @@
-package tcp
+package dissector
 
 import (
 	"bufio"
-	"cocoon/pkg/dissector"
 	"cocoon/pkg/model/api"
 	"cocoon/pkg/model/common"
 	"io"
@@ -26,6 +25,8 @@ type tcpReader struct {
 	isClient       bool
 	msgQueue       chan tcpReaderDataMsg // Channel of captured reassembled tcp payload
 	data           []byte
+	preData        []byte
+	preLen         int
 	//superTimer  *api.SuperTimer
 	parent      *tcpStream
 	packetsSeen uint
@@ -34,7 +35,7 @@ type tcpReader struct {
 	//emitter            api.Emitter
 	//counterPair        *api.CounterPair
 
-	dissector *dissector.DissectProcessor
+	dissector *DissectProcessor
 	dissectC  chan *api.DissectResult
 	br        *bufio.Reader
 
@@ -47,11 +48,11 @@ func newTcpReader(connectionInfo *common.ConnectionInfo, parent *tcpStream, isRe
 		isClient:       true,
 		isClosed:       false,
 		parent:         parent,
-		msgQueue:       make(chan tcpReaderDataMsg, 32),
+		msgQueue:       make(chan tcpReaderDataMsg),
 		data:           []byte{},
 		packetsSeen:    0,
 		dissectC:       dissectC,
-		dissector:      dissector.NewDissectProcessor(connectionInfo.ID(), isRequest, dissectC),
+		dissector:      NewDissectProcessor(connectionInfo.ID(), isRequest, dissectC),
 	}
 	tcpReader.br = bufio.NewReader(tcpReader)
 	return tcpReader
@@ -85,22 +86,10 @@ func (h *tcpReader) Read(p []byte) (int, error) {
 	}
 
 	l := copy(p, h.data)
+	h.preData = make([]byte, l)
+	h.preLen = copy(h.preData, p)
 	h.data = h.data[l:]
 	return l, nil
-}
-
-// 给默认解析器用，直接按 tcp 包读取
-func (h *tcpReader) ReadCurrent() []byte {
-	var msg tcpReaderDataMsg
-	ok := true
-	for ok && len(h.data) == 0 {
-		msg, ok = <-h.msgQueue
-		h.data = msg.bytes
-	}
-	ret := make([]byte, len(h.data))
-	l := copy(ret, h.data)
-	h.data = h.data[l:]
-	return ret
 }
 
 func (h *tcpReader) Connection() *common.ConnectionInfo {
@@ -109,6 +98,12 @@ func (h *tcpReader) Connection() *common.ConnectionInfo {
 
 func (h *tcpReader) BufferReader() *bufio.Reader {
 	return h.br
+}
+
+// 将上次读取的内容回填再读
+func (h *tcpReader) Reset() {
+	h.data = append(h.preData[:h.preLen], h.data...)
+	h.br.Reset(h)
 }
 
 func (h *tcpReader) Close() {
@@ -122,11 +117,7 @@ func (h *tcpReader) Close() {
 
 func (h *tcpReader) run(wg *sync.WaitGroup) {
 	defer wg.Done()
-
-	for {
-		h.dissector.Process(h)
-		// TODO close and stop
-	}
+	h.dissector.Process(h)
 
 	/*
 		err := h.extension.Dissector.Dissect(b, h.isClient, h.tcpID, h.counterPair, h.superTimer, h.parent.superIdentifier, h.emitter, filteringOptions)

@@ -20,15 +20,11 @@ func (d *DefaultDissector) Name() string {
 	return "Default Dissector"
 }
 
-func (d *DefaultDissector) Match(_ api.TcpReader) bool {
-	return true
-}
-
-func (d *DefaultDissector) Dissect(reader api.TcpReader, isRequest bool) {
+func (d *DefaultDissector) Dissect(reader api.TcpReader, isRequest bool) error {
 	br := reader.BufferReader()
 	buffered := d.tryRead(br)
 	if buffered <= 0 {
-		return
+		return nil
 	}
 	raw := make([]byte, buffered)
 	br.Read(raw)
@@ -41,6 +37,7 @@ func (d *DefaultDissector) Dissect(reader api.TcpReader, isRequest bool) {
 	}
 
 	d.resultC <- result
+	return nil
 }
 
 func (d *DefaultDissector) tryRead(br *bufio.Reader) int {

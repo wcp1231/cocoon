@@ -1,33 +1,14 @@
 package rpc
 
 import (
-	"cocoon/pkg/model"
-	"time"
+	"cocoon/pkg/model/common"
 )
 
 const COCOON_SERVER_NAME = "Cocoon"
 
-type TcpPacket struct {
-	Source      string
-	Destination string
-	IsOutgoing  bool
-	Direction   *model.Direction
-	Seq         uint64
-	Timestamp   time.Time
-	Payload     []byte
-}
-
-func (t *TcpPacket) IsRequest() bool {
-	isRequest := *t.Direction == model.ClientToRemote
-	if !t.IsOutgoing {
-		isRequest = *t.Direction == model.RemoteToClient
-	}
-	return isRequest
-}
-
 type UploadReq struct {
 	Session string
-	Packet  *TcpPacket
+	Packet  *common.TcpPacket
 }
 
 type UploadResp struct {
@@ -40,5 +21,13 @@ type PostStartReq struct {
 }
 
 type PostStartResp struct {
+	Error error
+}
+
+type AnalysisReq struct {
+	Session string
+}
+
+type AnalysisResp struct {
 	Error error
 }

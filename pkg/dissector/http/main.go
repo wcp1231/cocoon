@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"cocoon/pkg/model/api"
 	"cocoon/pkg/model/common"
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -24,44 +23,20 @@ func (d *Dissector) Name() string {
 	return "HTTP Dissector"
 }
 
-func (d *Dissector) Match(reader api.TcpReader) bool {
-	br := reader.BufferReader()
-	bytes, err := br.Peek(10)
-	if err != nil {
-		fmt.Println(err.Error())
-		return false
-	}
-	text := string(bytes)
-	isHttp := strings.HasPrefix(text, "GET /")
-	isHttp = isHttp || strings.HasPrefix(text, "HEAD /")
-	isHttp = isHttp || strings.HasPrefix(text, "POST /")
-	isHttp = isHttp || strings.HasPrefix(text, "PUT /")
-	isHttp = isHttp || strings.HasPrefix(text, "PATCH /")
-	isHttp = isHttp || strings.HasPrefix(text, "DELETE /")
-	isHttp = isHttp || strings.HasPrefix(text, "OPTIONS /")
-	isHttp = isHttp || strings.HasPrefix(text, "TRACE /")
-	//isHttp = isHttp || strings.HasPrefix(text, "CONNECT /")
-
-	// response
-	isHttp = isHttp || strings.HasPrefix(text, "HTTP/1.1")
-	return isHttp
-}
-
-func (d *Dissector) Dissect(reader api.TcpReader, isRequest bool) {
+func (d *Dissector) Dissect(reader api.TcpReader, isRequest bool) error {
 	connectionInfo := reader.Connection()
 	br := reader.BufferReader()
 	if isRequest {
-		d.handleRequest(connectionInfo, br)
+		return d.handleRequest(connectionInfo, br)
 	} else {
-		d.handleResponse(connectionInfo, br)
+		return d.handleResponse(connectionInfo, br)
 	}
 }
 
-func (d *Dissector) handleRequest(connectionInfo *common.ConnectionInfo, br *bufio.Reader) {
+func (d *Dissector) handleRequest(connectionInfo *common.ConnectionInfo, br *bufio.Reader) error {
 	request, err := http.ReadRequest(br)
 	if err != nil {
-		fmt.Println(err.Error())
-		return
+		return err
 	}
 
 	headers := d.parseHeaders(request.Header)
@@ -76,13 +51,13 @@ func (d *Dissector) handleRequest(connectionInfo *common.ConnectionInfo, br *buf
 		Raw:    &raw,
 	}
 	d.resultC <- result
+	return nil
 }
 
-func (d *Dissector) handleResponse(connectionInfo *common.ConnectionInfo, br *bufio.Reader) {
+func (d *Dissector) handleResponse(connectionInfo *common.ConnectionInfo, br *bufio.Reader) error {
 	response, err := http.ReadResponse(br, nil)
 	if err != nil {
-		fmt.Println(err.Error())
-		return
+		return err
 	}
 
 	headers := d.parseHeaders(response.Header)
@@ -97,6 +72,7 @@ func (d *Dissector) handleResponse(connectionInfo *common.ConnectionInfo, br *bu
 		Raw:    &raw,
 	}
 	d.resultC <- result
+	return nil
 }
 
 func (d *Dissector) parseHeaders(headers http.Header) map[string]string {

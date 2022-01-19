@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"cocoon/pkg/model"
+	"cocoon/pkg/model/common"
 	"cocoon/pkg/model/rpc"
 	"context"
 	"fmt"
@@ -48,15 +48,15 @@ func (d *DumpHandler) Start() {
 			d.server.logger.WithOptions(zap.AddCaller()).Error("proxy outbound conn Close error")
 		}
 	}()
-	go d.pipe(d.inboundConn, d.outboundConn, model.ClientToRemote)
-	go d.pipe(d.outboundConn, d.inboundConn, model.RemoteToClient)
+	go d.pipe(d.inboundConn, d.outboundConn, common.ClientToRemote)
+	go d.pipe(d.outboundConn, d.inboundConn, common.RemoteToClient)
 	select {
 	case <-d.ctx.Done():
 		return
 	}
 }
 
-func (d *DumpHandler) pipe(srcConn, dstConn *net.TCPConn, direction model.Direction) {
+func (d *DumpHandler) pipe(srcConn, dstConn *net.TCPConn, direction common.Direction) {
 	defer d.Close()
 
 	buff := make([]byte, maxPacketLen)
@@ -104,7 +104,7 @@ func (d *DumpHandler) pipe(srcConn, dstConn *net.TCPConn, direction model.Direct
 	}
 }
 
-func (d *DumpHandler) dump(b []byte, direction model.Direction) error {
+func (d *DumpHandler) dump(b []byte, direction common.Direction) error {
 	//kvs := []dumper.DumpValue{
 	//	dumper.DumpValue{
 	//		Key:   "conn_seq_num",
@@ -122,7 +122,7 @@ func (d *DumpHandler) dump(b []byte, direction model.Direction) error {
 
 	//return p.agent.dumper.Dump(b, direction, p.connMetadata, kvs)
 	fmt.Printf("Seq[%d] %s %s %s Dump:\n", d.seqNum, d.inboundAddr, direction.String(), d.outboundAddr)
-	packte := rpc.TcpPacket{
+	packte := common.TcpPacket{
 		Source:      d.inboundAddr,
 		Destination: d.outboundAddr,
 		IsOutgoing:  true, // TODO 这里暂时都是向外的流量
@@ -139,7 +139,7 @@ func (d *DumpHandler) dump(b []byte, direction model.Direction) error {
 	return nil
 }
 
-func (d *DumpHandler) fieldsWithErrorAndDirection(err error, direction model.Direction) []zapcore.Field {
+func (d *DumpHandler) fieldsWithErrorAndDirection(err error, direction common.Direction) []zapcore.Field {
 	fields := []zapcore.Field{
 		zap.Error(err),
 		zap.Uint64("conn_seq_num", d.seqNum),

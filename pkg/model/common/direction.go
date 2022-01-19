@@ -1,4 +1,4 @@
-package model
+package common
 
 // Direction of TCP commnication
 type Direction int

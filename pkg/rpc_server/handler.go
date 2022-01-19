@@ -1,7 +1,8 @@
-package server
+package rpc_server
 
 import (
 	"cocoon/pkg/db"
+	"cocoon/pkg/model/common"
 	"cocoon/pkg/model/rpc"
 	"context"
 	"go.uber.org/zap"
@@ -40,7 +41,14 @@ func (c *CocoonHandler) Upload(ctx context.Context, args *rpc.UploadReq, resp *r
 	return nil
 }
 
-func (c *CocoonHandler) generatePacketDBModel(session string, packet *rpc.TcpPacket) *db.TcpTraffic {
+func (c *CocoonHandler) Analysis(ctx context.Context, args *rpc.AnalysisReq, resp *rpc.AnalysisResp) error {
+	c.logger.Debug("Handle analysis request", zap.String("session", args.Session))
+	err := c.rpcService.dissectManager.Dissect(args.Session, c.rpcService.database)
+	resp.Error = err
+	return nil
+}
+
+func (c *CocoonHandler) generatePacketDBModel(session string, packet *common.TcpPacket) *db.TcpTraffic {
 	return &db.TcpTraffic{
 		Session:     session,
 		Source:      packet.Source,
@@ -49,6 +57,7 @@ func (c *CocoonHandler) generatePacketDBModel(session string, packet *rpc.TcpPac
 		Direction:   packet.Direction,
 		Seq:         packet.Seq,
 		Timestamp:   packet.Timestamp,
+		Size:        len(packet.Payload),
 		Raw:         packet.Payload,
 	}
 }

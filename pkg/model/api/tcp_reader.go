@@ -10,6 +10,6 @@ type TcpReader interface {
 	io.Reader
 
 	BufferReader() *bufio.Reader
-	ReadCurrent() []byte
+	Reset()
 	Connection() *common.ConnectionInfo
 }

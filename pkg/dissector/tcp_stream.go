@@ -1,9 +1,8 @@
-package tcp
+package dissector
 
 import (
 	"cocoon/pkg/model/api"
 	"cocoon/pkg/model/common"
-	"cocoon/pkg/model/rpc"
 	"cocoon/pkg/model/traffic"
 	"go.uber.org/zap"
 	"sync"
@@ -21,8 +20,8 @@ type tcpStream struct {
 	responseReader *tcpReader
 }
 
-func NewTcpStream(logger *zap.Logger, connectionInfo *common.ConnectionInfo, resultC chan *traffic.StreamItem) *tcpStream {
-	dissectC := make(chan *api.DissectResult, 1024)
+func newTcpStream(logger *zap.Logger, connectionInfo *common.ConnectionInfo, resultC chan *traffic.StreamItem) *tcpStream {
+	dissectC := make(chan *api.DissectResult)
 
 	stream := &tcpStream{
 		logger:         logger,
@@ -39,7 +38,7 @@ func NewTcpStream(logger *zap.Logger, connectionInfo *common.ConnectionInfo, res
 	stream.requestReader = requestReader
 	stream.responseReader = responseReader
 
-	stream.wg.Add(2)
+	stream.wg.Add(3)
 	go requestReader.run(&stream.wg)
 	go responseReader.run(&stream.wg)
 	go stream.handleDissectResult()
@@ -47,10 +46,9 @@ func NewTcpStream(logger *zap.Logger, connectionInfo *common.ConnectionInfo, res
 	return stream
 }
 
-func (s *tcpStream) Accept(packet *rpc.TcpPacket) {
+func (s *tcpStream) Accept(packet *common.TcpPacket) {
 	if packet.Seq < s.nextSeq || s.nextSeq == 0 {
-		// 新链接
-		// TODO 初始化
+		// TODO 新链接, 初始化
 		s.nextSeq = packet.Seq
 	}
 
@@ -66,9 +64,18 @@ func (s *tcpStream) Accept(packet *rpc.TcpPacket) {
 	}
 }
 
+func (s *tcpStream) Close() {
+	s.requestReader.Close()
+	s.responseReader.Close()
+}
+
 func (s *tcpStream) handleDissectResult() {
+	defer s.wg.Done()
 	for {
-		result := <-s.dissectC
-		s.logger.Info("Dissect result", zap.String("result", result.String()))
+		diss, more := <-s.dissectC
+		s.logger.Info("Dissect result", zap.String("req", diss.String()))
+		if !more {
+			break
+		}
 	}
 }

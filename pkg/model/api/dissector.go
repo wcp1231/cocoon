@@ -12,8 +12,7 @@ var (
 
 type Dissector interface {
 	Name() string
-	Match(packet TcpReader) bool // 判断是否匹配
-	Dissect(reader TcpReader, isRequest bool)
+	Dissect(reader TcpReader, isRequest bool) error
 }
 
 type DissectResult struct {

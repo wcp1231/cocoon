@@ -2,7 +2,7 @@ package main
 
 import (
 	log "cocoon/pkg/logger"
-	"cocoon/pkg/server"
+	"cocoon/pkg/rpc_server"
 	"flag"
 	"go.uber.org/zap"
 )
@@ -16,7 +16,7 @@ func main() {
 	flag.Parse()
 
 	logger := log.NewLogger()
-	s := server.NewRpcServer(logger, dbUri)
+	s := rpc_server.NewRpcServer(logger, dbUri)
 	err := s.Start(":7070")
 	if err != nil {
 		logger.Error("Start cocoon server failed", zap.Error(err))

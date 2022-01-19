@@ -1,7 +1,7 @@
 package db
 
 import (
-	"cocoon/pkg/model"
+	"cocoon/pkg/model/common"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
@@ -32,8 +32,9 @@ type TcpTraffic struct {
 	Source      string             `json:"src,omitempty" bson:"src,omitempty"`
 	Destination string             `json:"dst,omitempty" bson:"dst,omitempty"`
 	IsOutgoing  bool               `json:"outgoing,omitempty" bson:"outgoing,omitempty"`
-	Direction   *model.Direction   `json:"direction,omitempty" bson:"direction,omitempty"`
+	Direction   *common.Direction  `json:"direction,omitempty" bson:"direction,omitempty"`
 	Seq         uint64             `json:"seq,omitempty" bson:"seq,omitempty"`
 	Timestamp   time.Time          `json:"timestamp,omitempty" bson:"timestamp,omitempty"`
+	Size        int                `json:"size,omitempty" bson:"size,omitempty"`
 	Raw         []byte             `json:"raw,omitempty" bson:"raw,omitempty"`
 }
