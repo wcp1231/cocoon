@@ -33,6 +33,7 @@ func NewDissectProcessor(tcpId string, isRequest bool, resultC chan *api.Dissect
 	dissectors = append(dissectors, redis.NewDissector(resultC))
 	dissectors = append(dissectors, http.NewDissector(resultC))
 	dissectors = append(dissectors, mongo.NewDissector(resultC))
+	//dissectors = append(dissectors, kafka.NewDissector(resultC))
 	dissectors = append(dissectors, newDefaultDissector(resultC))
 	return &DissectProcessor{
 		ID:        tcpId,

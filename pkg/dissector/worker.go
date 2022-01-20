@@ -45,6 +45,9 @@ func (d *DissectWorker) accept(packet *common.TcpPacket) {
 		Destination: packet.Destination,
 		IsOutgoing:  packet.IsOutgoing,
 	}
+	if packet.Destination != "172.16.1.46:9092" {
+		return
+	}
 	stream := d.getOrCreateStream(connectionInfo)
 	stream.Accept(packet)
 }

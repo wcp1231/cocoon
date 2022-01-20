@@ -28,4 +28,8 @@ var (
 		Name:    "Mongo",
 		Version: "0",
 	}
+	PROTOCOL_KAFKA = &Protocol{
+		Name:    "Kafka",
+		Version: "0",
+	}
 )
