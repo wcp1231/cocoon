@@ -1,4 +1,4 @@
-package client
+package agent
 
 import (
 	"cocoon/pkg/model/rpc"
@@ -49,4 +49,24 @@ func (r *RpcClient) Upload(ctx context.Context, req *rpc.UploadReq) {
 	} else {
 		// TODO
 	}
+}
+
+func (r *RpcClient) ConnClose(ctx context.Context, req *rpc.ConnCloseReq) {
+	resp := &rpc.ConnCloseResp{}
+	err := r.client.Call(ctx, "ConnClose", req, resp)
+	if err != nil {
+		//TODO
+		// log.Fatalf("failed to call: %v", err)
+	}
+}
+
+func (r *RpcClient) RequestOutbound(ctx context.Context, req *rpc.OutboundReq) (*client.Call, error) {
+	resp := &rpc.OutboundResp{}
+	return r.client.Go(ctx, "RequestOutbound", req, resp, nil)
+}
+
+func (r *RpcClient) RecordRequestResponse(ctx context.Context, req *rpc.RecordReq) {
+	resp := &rpc.RecordResp{}
+	r.client.Go(ctx, "RecordRequestResponse", req, resp, nil)
+	// TODO
 }

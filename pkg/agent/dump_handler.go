@@ -1,10 +1,12 @@
 package agent
 
 import (
+	"bufio"
+	"bytes"
 	"cocoon/pkg/model/common"
 	"cocoon/pkg/model/rpc"
+	"cocoon/pkg/proto"
 	"context"
-	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net"
@@ -23,10 +25,14 @@ type DumpHandler struct {
 	ctx          context.Context
 	Close        context.CancelFunc
 	seqNum       uint64
+
+	pc    *proto.ProtoClassifier
+	proto *common.Protocol
 }
 
 func NewDumpHandler(server *Server, inboundConn, outboundConn *net.TCPConn) *DumpHandler {
 	innerCtx, close := context.WithCancel(server.ctx)
+	pc := proto.NewProtoClassifier()
 	return &DumpHandler{
 		server:       server,
 		inboundConn:  inboundConn,
@@ -36,6 +42,9 @@ func NewDumpHandler(server *Server, inboundConn, outboundConn *net.TCPConn) *Dum
 		ctx:          innerCtx,
 		Close:        close,
 		seqNum:       0,
+
+		pc:    pc,
+		proto: common.PROTOCOL_UNKNOWN,
 	}
 }
 
@@ -68,24 +77,32 @@ func (d *DumpHandler) pipe(srcConn, dstConn *net.TCPConn, direction common.Direc
 				fields := d.fieldsWithErrorAndDirection(err, direction)
 				d.server.logger.WithOptions(zap.AddCaller()).Error("strCon Read error", fields...)
 			}
+			d.handleClose(direction)
 			break
 		}
 
 		b := buff[:n]
-		if n == maxPacketLen && buff[n-1] != 0x00 {
-			longB = append(longB, b...)
-		} else {
-			if len(longB) > 0 {
+
+		if d.proto == common.PROTOCOL_UNKNOWN && direction == common.ClientToRemote {
+			d.proto = d.pc.Classify(bufio.NewReader(bytes.NewBuffer(b)))
+		}
+
+		if d.proto.Dump {
+			if n == maxPacketLen && buff[n-1] != 0x00 {
 				longB = append(longB, b...)
-				err = d.dump(longB, direction)
-				longB = nil
 			} else {
-				err = d.dump(b, direction)
-			}
-			if err != nil {
-				fields := d.fieldsWithErrorAndDirection(err, direction)
-				d.server.logger.WithOptions(zap.AddCaller()).Error("dumper Dump error", fields...)
-				break
+				if len(longB) > 0 {
+					longB = append(longB, b...)
+					err = d.dump(longB, direction)
+					longB = nil
+				} else {
+					err = d.dump(b, direction)
+				}
+				if err != nil {
+					fields := d.fieldsWithErrorAndDirection(err, direction)
+					d.server.logger.WithOptions(zap.AddCaller()).Error("dumper Dump error", fields...)
+					break
+				}
 			}
 		}
 
@@ -105,23 +122,11 @@ func (d *DumpHandler) pipe(srcConn, dstConn *net.TCPConn, direction common.Direc
 }
 
 func (d *DumpHandler) dump(b []byte, direction common.Direction) error {
-	//kvs := []dumper.DumpValue{
-	//	dumper.DumpValue{
-	//		Key:   "conn_seq_num",
-	//		Value: p.seqNum,
-	//	},
-	//	dumper.DumpValue{
-	//		Key:   "direction",
-	//		Value: direction.String(),
-	//	},
-	//	dumper.DumpValue{
-	//		Key:   "ts",
-	//		Value: time.Now(),
-	//	},
-	//}
-
-	//return p.agent.dumper.Dump(b, direction, p.connMetadata, kvs)
-	fmt.Printf("Seq[%d] %s %s %s Dump:\n", d.seqNum, d.inboundAddr, direction.String(), d.outboundAddr)
+	d.server.logger.Info("Dump",
+		zap.String("i", d.inboundAddr),
+		zap.String("d", direction.String()),
+		zap.String("o", d.outboundAddr),
+		zap.String("p", d.proto.String()))
 	packte := common.TcpPacket{
 		Source:      d.inboundAddr,
 		Destination: d.outboundAddr,
@@ -129,6 +134,7 @@ func (d *DumpHandler) dump(b []byte, direction common.Direction) error {
 		Direction:   &direction,
 		Seq:         d.seqNum,
 		Timestamp:   time.Now(),
+		Protocol:    d.proto.Name,
 		Payload:     b,
 	}
 	req := rpc.UploadReq{
@@ -137,6 +143,15 @@ func (d *DumpHandler) dump(b []byte, direction common.Direction) error {
 	}
 	d.server.rpcClient.Upload(d.ctx, &req)
 	return nil
+}
+
+func (d *DumpHandler) handleClose(direction common.Direction) {
+	req := &rpc.ConnCloseReq{
+		Source:      d.inboundAddr,
+		Destination: d.outboundAddr,
+		Direction:   &direction,
+	}
+	d.server.rpcClient.ConnClose(d.ctx, req)
 }
 
 func (d *DumpHandler) fieldsWithErrorAndDirection(err error, direction common.Direction) []zapcore.Field {

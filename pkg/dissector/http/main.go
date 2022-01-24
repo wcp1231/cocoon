@@ -78,7 +78,7 @@ func (d *Dissector) handleResponse(connectionInfo *common.ConnectionInfo, br *bu
 func (d *Dissector) parseHeaders(headers http.Header) map[string]string {
 	ret := make(map[string]string)
 	for k, v := range headers {
-		ret[k] = strings.Join(v, ",")
+		ret[k] = strings.Join(v, ";")
 	}
 	return ret
 }

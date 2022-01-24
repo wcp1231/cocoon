@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"cocoon/pkg/client"
 	"context"
 	"github.com/cybozu-go/transocks"
 	"go.uber.org/zap"
@@ -17,7 +16,7 @@ type Server struct {
 	appname    string
 	session    string
 	listenAddr *net.TCPAddr
-	rpcClient  *client.RpcClient
+	rpcClient  *RpcClient
 	ctx        context.Context
 	shutdown   context.CancelFunc
 
@@ -31,7 +30,7 @@ func NewServer(ctx context.Context, logger *zap.Logger, appname, session, remote
 	wg := &sync.WaitGroup{}
 	closedChan := make(chan struct{})
 
-	rpcClient := client.NewRpcClient(remote)
+	rpcClient := NewRpcClient(remote)
 
 	return &Server{
 		logger:     logger,
@@ -130,7 +129,7 @@ func (s *Server) handleConn(inboundConn *net.TCPConn, originDst *net.TCPAddr) {
 		return
 	}
 
-	p := NewDumpHandler(s, inboundConn, outboundConn)
+	p := NewConnHandler(s, inboundConn, outboundConn)
 	p.Start()
 }
 

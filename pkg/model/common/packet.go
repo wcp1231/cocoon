@@ -11,6 +11,7 @@ type TcpPacket struct {
 	Direction   *Direction
 	Seq         uint64
 	Timestamp   time.Time
+	Protocol    string
 	Payload     []byte
 }
 

@@ -34,10 +34,21 @@ func (c *CocoonHandler) Upload(ctx context.Context, args *rpc.UploadReq, resp *r
 		zap.String("src", args.Packet.Source),
 		zap.String("direction", args.Packet.Direction.String()),
 		zap.String("dest", args.Packet.Destination),
+		zap.String("proto", args.Packet.Protocol),
 		zap.Uint64("seq", args.Packet.Seq),
 		zap.Int("size", len(args.Packet.Payload)))
 	dbModel := c.generatePacketDBModel(args.Session, args.Packet)
 	c.rpcService.database.AppendTcpPacket(dbModel)
+	return nil
+}
+
+func (c *CocoonHandler) ConnClose(ctx context.Context, args *rpc.ConnCloseReq, resp *rpc.ConnCloseResp) error {
+	c.logger.Debug("Conn close",
+		zap.String("src", args.Source),
+		zap.String("direction", args.Direction.String()),
+		zap.String("dest", args.Destination))
+	//dbModel := c.generatePacketDBModel(args.Session, args.Packet)
+	//c.rpcService.database.AppendTcpPacket(dbModel)
 	return nil
 }
 
@@ -46,6 +57,43 @@ func (c *CocoonHandler) Analysis(ctx context.Context, args *rpc.AnalysisReq, res
 	err := c.rpcService.dissectManager.Dissect(args.Session, c.rpcService.database)
 	resp.Error = err
 	return nil
+}
+
+// RequestOutbound 请求 mock 数据
+func (c *CocoonHandler) RequestOutbound(ctx context.Context, args *rpc.OutboundReq, resp *rpc.OutboundResp) error {
+	c.logger.Debug("Handle outbound request",
+		zap.String("session", args.Session),
+		zap.String("proto", args.Proto.String()))
+	//body := []byte("HTTP/1.1 200 OK\r\nContent-Length: 7\r\n\r\nMock OK")
+	//resp.Body = &body
+	resp.OpType = rpc.OP_PASS
+	return nil
+}
+
+func (c *CocoonHandler) RecordRequestResponse(ctx context.Context, args *rpc.RecordReq, resp *rpc.RecordResp) error {
+	c.logger.Debug("Handle record call",
+		zap.String("session", args.Session),
+		zap.String("proto", args.Proto.String()))
+	dbModel := c.generateRecordDBModel(args)
+	c.rpcService.database.AppendRecord(dbModel)
+	return nil
+}
+
+func (c *CocoonHandler) generateRecordDBModel(args *rpc.RecordReq) *db.Record {
+	record := &db.Record{
+		Session:    args.Session,
+		IsOutgoing: args.IsOutgoing,
+		Proto:      args.Proto.Name,
+		ReqHeader:  args.ReqHeader,
+		RespHeader: args.RespHeader,
+	}
+	if args.ReqBody != nil {
+		record.ReqBody = string(*args.ReqBody)
+	}
+	if args.RespBody != nil {
+		record.RespBody = string(*args.RespBody)
+	}
+	return record
 }
 
 func (c *CocoonHandler) generatePacketDBModel(session string, packet *common.TcpPacket) *db.TcpTraffic {
