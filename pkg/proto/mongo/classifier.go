@@ -21,7 +21,6 @@ func (c *Classifier) Match(r *bufio.Reader) bool {
 		fmt.Printf("Mongo classifier read header failed. %v\n", err)
 		return false
 	}
-	fmt.Printf("Mongo classifier read header %v\n", header)
 	if header.MessageLength <= 0 {
 		return false
 	}

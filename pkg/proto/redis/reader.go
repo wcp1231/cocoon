@@ -160,6 +160,7 @@ func (r *RESPReader) readBulkString(line []byte) (*RedisObject, error) {
 		return nil, err
 	}
 	if count == -1 {
+		// TODO handle nil
 		object.Raw = make([]byte, len(line))
 		copy(object.Raw, line)
 		return object, nil

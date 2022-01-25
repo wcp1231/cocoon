@@ -1,6 +1,10 @@
 package redis
 
-import "testing"
+import (
+	"bufio"
+	"bytes"
+	"testing"
+)
 
 func TestClassifier_Match(t *testing.T) {
 	datas := []string{
@@ -13,7 +17,8 @@ func TestClassifier_Match(t *testing.T) {
 	}
 	c := Classifier{}
 	for _, data := range datas {
-		if !c.Match([]byte(data)) {
+		r := bufio.NewReader(bytes.NewReader([]byte(data)))
+		if !c.Match(r) {
 			t.Fatalf("Test %v fail", data)
 		}
 	}

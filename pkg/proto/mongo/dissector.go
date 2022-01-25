@@ -59,8 +59,6 @@ func (d *Dissector) dissectRequest() error {
 		return err
 	}
 
-	fmt.Printf("Mongo request %+v\n", message)
-
 	raw := buf.Bytes()
 	message.Raw = &raw
 
@@ -80,8 +78,6 @@ func (d *Dissector) dissectResponse() error {
 		fmt.Println("Mongo response dissect error", err.Error())
 		return err
 	}
-
-	fmt.Printf("Mongo response %+v\n", message)
 
 	raw := buf.Bytes()
 	message.Raw = &raw

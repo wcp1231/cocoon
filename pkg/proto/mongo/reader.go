@@ -57,16 +57,16 @@ func ParseQuery(header MsgHeader, r io.Reader) *common.GenericMessage {
 	query := ToJson(ReadDocument(r))
 	selector := ToJson(ReadDocument(r))
 
-	fmt.Printf("%s QUERY id:%d coll:%s toskip:%d toret:%d flag:%b query:%v sel:%v\n",
-		currentTime(),
-		header.RequestID,
-		fullCollectionName,
-		numberToSkip,
-		numberToReturn,
-		flag,
-		query,
-		selector,
-	)
+	//fmt.Printf("%s QUERY id:%d coll:%s toskip:%d toret:%d flag:%b query:%v sel:%v\n",
+	//	currentTime(),
+	//	header.RequestID,
+	//	fullCollectionName,
+	//	numberToSkip,
+	//	numberToReturn,
+	//	flag,
+	//	query,
+	//	selector,
+	//)
 
 	headers := map[string]string{}
 	headers["op_type"] = "Query"
@@ -94,8 +94,8 @@ func ParseInsert(header MsgHeader, r io.Reader) *common.GenericMessage {
 	} else {
 		docsStr = ToJson(docs)
 	}
-	fmt.Printf("%s INSERT id:%d coll:%s flag:%b docs:%v\n",
-		currentTime(), header.RequestID, fullCollectionName, flag, docsStr)
+	//fmt.Printf("%s INSERT id:%d coll:%s flag:%b docs:%v\n",
+	//	currentTime(), header.RequestID, fullCollectionName, flag, docsStr)
 
 	headers := map[string]string{}
 	headers["op_type"] = "Insert"
@@ -117,8 +117,8 @@ func ParseUpdate(header MsgHeader, r io.Reader) *common.GenericMessage {
 	flag := MustReadInt32(r)
 	selector := ToJson(ReadDocument(r))
 	update := ToJson(ReadDocument(r))
-	fmt.Printf("%s UPDATE id:%d coll:%s flag:%b sel:%v update:%v\n",
-		currentTime(), header.RequestID, fullCollectionName, flag, selector, update)
+	//fmt.Printf("%s UPDATE id:%d coll:%s flag:%b sel:%v update:%v\n",
+	//	currentTime(), header.RequestID, fullCollectionName, flag, selector, update)
 
 	headers := map[string]string{}
 	headers["op_type"] = "Update"
@@ -140,8 +140,8 @@ func ParseGetMore(header MsgHeader, r io.Reader) *common.GenericMessage {
 	fullCollectionName := ReadCString(r)
 	numberToReturn := MustReadInt32(r)
 	cursorID := ReadInt64(r)
-	fmt.Printf("%s GETMORE id:%d coll:%s toret:%d curID:%d\n",
-		currentTime(), header.RequestID, fullCollectionName, numberToReturn, cursorID)
+	//fmt.Printf("%s GETMORE id:%d coll:%s toret:%d curID:%d\n",
+	//	currentTime(), header.RequestID, fullCollectionName, numberToReturn, cursorID)
 
 	headers := map[string]string{}
 	headers["op_type"] = "GetMore"
@@ -159,10 +159,10 @@ func ParseGetMore(header MsgHeader, r io.Reader) *common.GenericMessage {
 func ParseDelete(header MsgHeader, r io.Reader) *common.GenericMessage {
 	_ = MustReadInt32(r)
 	fullCollectionName := ReadCString(r)
-	flag := MustReadInt32(r)
+	//flag := MustReadInt32(r)
 	selector := ToJson(ReadDocument(r))
-	fmt.Printf("%s DELETE id:%d coll:%s flag:%b sel:%v \n",
-		currentTime(), header.RequestID, fullCollectionName, flag, selector)
+	//fmt.Printf("%s DELETE id:%d coll:%s flag:%b sel:%v \n",
+	//	currentTime(), header.RequestID, fullCollectionName, flag, selector)
 	headers := map[string]string{}
 	headers["op_type"] = "Delete"
 	headers["request_id"] = strconv.Itoa(int(header.RequestID))
@@ -177,7 +177,7 @@ func ParseDelete(header MsgHeader, r io.Reader) *common.GenericMessage {
 
 func ParseKillCursors(header MsgHeader, r io.Reader) *common.GenericMessage {
 	_ = MustReadInt32(r)
-	numberOfCursorIDs := MustReadInt32(r)
+	//numberOfCursorIDs := MustReadInt32(r)
 	var cursorIDs []string
 	for {
 		n := ReadInt64(r)
@@ -187,8 +187,8 @@ func ParseKillCursors(header MsgHeader, r io.Reader) *common.GenericMessage {
 		}
 		break
 	}
-	fmt.Printf("%s KILLCURSORS id:%d numCurID:%d curIDs:%s\n",
-		currentTime(), header.RequestID, numberOfCursorIDs, cursorIDs)
+	//fmt.Printf("%s KILLCURSORS id:%d numCurID:%d curIDs:%s\n",
+	//	currentTime(), header.RequestID, numberOfCursorIDs, cursorIDs)
 
 	headers := map[string]string{}
 	headers["op_type"] = "KillCursors"
@@ -213,15 +213,15 @@ func ParseReply(header MsgHeader, r io.Reader) *common.GenericMessage {
 	} else {
 		docsStr = ToJson(docs)
 	}
-	fmt.Printf("%s REPLY to:%d flag:%b curID:%d from:%d reted:%d docs:%v\n",
-		currentTime(),
-		header.ResponseTo,
-		flag,
-		cursorID,
-		startingFrom,
-		numberReturned,
-		docsStr,
-	)
+	//fmt.Printf("%s REPLY to:%d flag:%b curID:%d from:%d reted:%d docs:%v\n",
+	//	currentTime(),
+	//	header.ResponseTo,
+	//	flag,
+	//	cursorID,
+	//	startingFrom,
+	//	numberReturned,
+	//	docsStr,
+	//)
 
 	headers := map[string]string{}
 	headers["op_type"] = "Reply"
@@ -241,7 +241,7 @@ func ParseReply(header MsgHeader, r io.Reader) *common.GenericMessage {
 
 func ParseMsg(header MsgHeader, r io.Reader) *common.GenericMessage {
 	msg := ReadCString(r)
-	fmt.Printf("%s MSG %d %s\n", currentTime(), header.RequestID, msg)
+	//fmt.Printf("%s MSG %d %s\n", currentTime(), header.RequestID, msg)
 	headers := map[string]string{}
 	headers["op_type"] = "Msg"
 	headers["request_id"] = strconv.Itoa(int(header.RequestID))
@@ -281,15 +281,15 @@ func ParseCommand(header MsgHeader, r io.Reader) *common.GenericMessage {
 	metadata := ToJson(ReadDocument(r))
 	commandArgs := ToJson(ReadDocument(r))
 	inputDocs := ToJson(ReadDocuments(r))
-	fmt.Printf("%s COMMAND id:%v db:%v meta:%v cmd:%v args:%v docs %v\n",
-		currentTime(),
-		header.RequestID,
-		database,
-		metadata,
-		commandName,
-		commandArgs,
-		inputDocs,
-	)
+	//fmt.Printf("%s COMMAND id:%v db:%v meta:%v cmd:%v args:%v docs %v\n",
+	//	currentTime(),
+	//	header.RequestID,
+	//	database,
+	//	metadata,
+	//	commandName,
+	//	commandArgs,
+	//	inputDocs,
+	//)
 
 	headers := map[string]string{}
 	headers["op_type"] = "Command"
@@ -309,30 +309,30 @@ func ParseCommand(header MsgHeader, r io.Reader) *common.GenericMessage {
 
 func ParseMsgNew(header MsgHeader, r io.Reader) *common.GenericMessage {
 	flags := ToJson(MustReadInt32(r))
-	fmt.Printf("%s MSG start id:%v flags: %v\n", currentTime(), header.RequestID, flags)
+	//fmt.Printf("%s MSG start id:%v flags: %v\n", currentTime(), header.RequestID, flags)
 	var msgs []map[string]interface{}
 	for {
 		t := ReadBytes(r, 1)
 		if t == nil {
-			fmt.Printf("%s MSG end id:%v \n",
-				currentTime(),
-				header.RequestID,
-			)
+			//fmt.Printf("%s MSG end id:%v \n",
+			//	currentTime(),
+			//	header.RequestID,
+			//)
 			break
 		}
 		switch t[0] {
 		case 0: // body
 			body := ReadDocument(r)
-			bodyJson := ToJson(body)
+			//bodyJson := ToJson(body)
 			checksum, _ := ReadUint32(r)
-			fmt.Printf("%s MSG id:%v type:0 body: %v checksum:%v\n",
-				currentTime(),
-				header.RequestID,
-				bodyJson,
-				checksum,
-			)
+			//fmt.Printf("%s MSG id:%v type:0 body: %v checksum:%v\n",
+			//	currentTime(),
+			//	header.RequestID,
+			//	bodyJson,
+			//	checksum,
+			//)
 			item := map[string]interface{}{
-				"body": body,
+				"body":     body,
 				"checksum": checksum,
 			}
 			msgs = append(msgs, item)
@@ -341,15 +341,15 @@ func ParseMsgNew(header MsgHeader, r io.Reader) *common.GenericMessage {
 			r1 := io.LimitReader(r, int64(sectionSize))
 			documentSequenceIdentifier := ReadCString(r1)
 			objects := ReadDocuments(r1)
-			objectsJson := ToJson(objects)
-			fmt.Printf("%s MSG id:%v type:1 documentSequenceIdentifier: %v objects:%v\n",
-				currentTime(),
-				header.RequestID,
-				documentSequenceIdentifier,
-				objectsJson,
-			)
+			//objectsJson := ToJson(objects)
+			//fmt.Printf("%s MSG id:%v type:1 documentSequenceIdentifier: %v objects:%v\n",
+			//	currentTime(),
+			//	header.RequestID,
+			//	documentSequenceIdentifier,
+			//	objectsJson,
+			//)
 			item := map[string]interface{}{
-				"objects": objects,
+				"objects":                      objects,
 				"document_sequence_identifier": documentSequenceIdentifier,
 			}
 			msgs = append(msgs, item)
@@ -365,7 +365,7 @@ func ParseMsgNew(header MsgHeader, r io.Reader) *common.GenericMessage {
 	headers["flags"] = flags
 	result := &common.GenericMessage{
 		Header: headers,
-		Body: &body,
+		Body:   &body,
 	}
 	// TODO raw
 	return result
@@ -375,8 +375,8 @@ func ParseCommandReply(header MsgHeader, r io.Reader) *common.GenericMessage {
 	metadata := ToJson(ReadDocument(r))
 	commandReply := ToJson(ReadDocument(r))
 	outputDocs := ToJson(ReadDocument(r))
-	fmt.Printf("%s COMMANDREPLY to:%d id:%v meta:%v cmdReply:%v outputDocs:%v\n",
-		currentTime(), header.ResponseTo, header.RequestID, metadata, commandReply, outputDocs)
+	//fmt.Printf("%s COMMANDREPLY to:%d id:%v meta:%v cmdReply:%v outputDocs:%v\n",
+	//	currentTime(), header.ResponseTo, header.RequestID, metadata, commandReply, outputDocs)
 
 	headers := map[string]string{}
 	headers["op_type"] = "CommandReply"

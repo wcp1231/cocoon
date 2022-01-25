@@ -109,12 +109,13 @@ func (c *ConnHandler) handleRequest() {
 		select {
 		case request, more := <-c.requestC:
 			if !more {
-				fmt.Printf("no more request. %v\n", request)
+				fmt.Printf("%s no more request. %v\n", c.proto.String(), request)
 				return
 			}
 			c.server.logger.Debug("Conn request",
 				zap.String("src", c.inboundAddr),
 				zap.String("dst", c.outboundAddr),
+				zap.String("proto", c.proto.String()),
 				zap.String("req", request.String()))
 
 			err := c.tryToMock(request)

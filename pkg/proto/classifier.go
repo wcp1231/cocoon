@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"cocoon/pkg/model/api"
 	"cocoon/pkg/model/common"
+	"cocoon/pkg/proto/dubbo"
 	"cocoon/pkg/proto/http"
 	"cocoon/pkg/proto/mongo"
 	"cocoon/pkg/proto/redis"
@@ -19,6 +20,7 @@ func NewProtoClassifier() *ProtoClassifier {
 	classifiers = append(classifiers, &redis.Classifier{})
 	classifiers = append(classifiers, &http.Classifier{})
 	classifiers = append(classifiers, &mongo.Classifier{})
+	classifiers = append(classifiers, &dubbo.Classifier{})
 	classifiers = append(classifiers, &DefaultClassifier{})
 	return &ProtoClassifier{
 		size:        len(classifiers),

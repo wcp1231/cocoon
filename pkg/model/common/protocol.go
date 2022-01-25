@@ -53,6 +53,6 @@ var (
 		Version: "0",
 		Pass:    false,
 		Dump:    true,
-		Mock:    true,
+		Mock:    false,
 	}
 )
