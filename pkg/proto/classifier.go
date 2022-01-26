@@ -28,7 +28,11 @@ func NewProtoClassifier() *ProtoClassifier {
 	}
 }
 
-func (c *ProtoClassifier) Classify(r *bufio.Reader) *common.Protocol {
+func (c *ProtoClassifier) Classify(dst string, r *bufio.Reader) *common.Protocol {
+	protocol := classifyByDst(dst)
+	if protocol != nil {
+		return protocol
+	}
 	for _, c := range c.classifiers {
 		if c.Match(r) {
 			return c.Protocol()

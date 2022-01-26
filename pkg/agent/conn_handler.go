@@ -92,7 +92,7 @@ func (c *ConnHandler) startProxy() {
 }
 
 func (c *ConnHandler) classifyProto() error {
-	c.proto = c.pc.Classify(c.inboundReader)
+	c.proto = c.pc.Classify(c.outboundAddr, c.inboundReader)
 	return nil
 }
 

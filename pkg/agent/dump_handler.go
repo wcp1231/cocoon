@@ -84,7 +84,7 @@ func (d *DumpHandler) pipe(srcConn, dstConn *net.TCPConn, direction common.Direc
 		b := buff[:n]
 
 		if d.proto == common.PROTOCOL_UNKNOWN && direction == common.ClientToRemote {
-			d.proto = d.pc.Classify(bufio.NewReader(bytes.NewBuffer(b)))
+			d.proto = d.pc.Classify(d.outboundAddr, bufio.NewReader(bytes.NewBuffer(b)))
 		}
 
 		if d.proto.Dump {

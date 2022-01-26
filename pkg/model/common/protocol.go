@@ -53,6 +53,13 @@ var (
 		Version: "0",
 		Pass:    false,
 		Dump:    true,
-		Mock:    false,
+		Mock:    true,
+	}
+	PROTOCOL_MYSQL = &Protocol{
+		Name:    "Mysql",
+		Version: "0",
+		Pass:    true,
+		Dump:    true,
+		Mock:    true,
 	}
 )

@@ -3,6 +3,7 @@ package main
 import (
 	"cocoon/pkg/agent"
 	log "cocoon/pkg/logger"
+	"cocoon/pkg/proto"
 	"context"
 	"flag"
 	"fmt"
@@ -27,6 +28,7 @@ var (
 	session string
 	listen  string
 	remote  string
+	protocols string
 
 	logger = log.NewLogger()
 )
@@ -37,6 +39,7 @@ func init() {
 	dumpCmd.StringVar(&appname, "session", "", "Application session")
 	dumpCmd.StringVar(&listen, "listen", "0.0.0.0:1820", "Listen address")
 	dumpCmd.StringVar(&remote, "remote", "", "Remote agent address")
+	dumpCmd.StringVar(&protocols, "protocol", "", "Protocol map.(eg '80:http,3306:mysql')")
 	mockCmd = flag.NewFlagSet(MOCK_CMD, flag.ExitOnError)
 	mockCmd.StringVar(&appname, "app", "", "Application name")
 	mockCmd.StringVar(&listen, "listen", "0.0.0.0:1820", "Listen address")
@@ -62,6 +65,7 @@ func main() {
 			os.Exit(1)
 		}
 
+		proto.InitPresetClassifier(protocols)
 		ensureSession()
 
 		logger.Info("Start proxy mode.",
