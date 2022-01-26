@@ -3,9 +3,7 @@ package dubbo
 import (
 	"bufio"
 	"cocoon/pkg/model/common"
-	"encoding/binary"
 	"fmt"
-	"time"
 )
 
 type PackageType int
@@ -34,6 +32,32 @@ type dubboHeader struct {
 	ID             int64
 	BodyLen        int
 	ResponseStatus byte
+}
+
+type dubboRequest struct {
+	header *dubboHeader
+	dubboVersion string
+	target string
+	serviceVersion string
+	method string
+	args map[string]interface{}
+	attachments map[string]interface{}
+}
+
+type dubboResponse struct {
+	header *dubboHeader
+	dubboVersion string
+	exception string
+	respObj interface{}
+	attachments map[string]interface{}
+}
+
+func (d *dubboHeader) isRequest() bool {
+	return d.Type & PackageRequest != 0x00
+}
+
+func (d *dubboHeader) hasException() bool {
+	return d.Type & PackageResponse_Exception != 0x00
 }
 
 func NewRequestDissector(reqC, respC chan *common.GenericMessage) *Dissector {
@@ -88,102 +112,3 @@ func (d *Dissector) dissectResponse() error {
 	return nil
 }
 
-func ReadPacket(reader *bufio.Reader) (*common.GenericMessage, error) {
-	header, err := ReadHeader(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	body := make([]byte, header.BodyLen)
-	_, err = reader.Read(body)
-	if err != nil {
-		return nil, err
-	}
-
-	headerBytes := EncodeHeader(header)
-	raw := make([]byte, len(headerBytes)+len(body))
-	copy(raw, headerBytes)
-	copy(raw[len(headerBytes):], body)
-
-	message := &common.GenericMessage{}
-	message.CaptureTime = time.Now()
-	message.Body = &body // FIXME
-	message.Raw = &raw
-	return message, nil
-}
-
-func ReadHeader(reader *bufio.Reader) (*dubboHeader, error) {
-	header := &dubboHeader{}
-	var err error
-	buf, err := reader.Peek(HEADER_LENGTH)
-	if err != nil { // this is impossible
-		return nil, err
-	}
-	_, err = reader.Discard(HEADER_LENGTH)
-	if err != nil { // this is impossible
-		return nil, err
-	}
-
-	//// read header
-	if buf[0] != MAGIC_HIGH && buf[1] != MAGIC_LOW {
-		return nil, ErrIllegalPackage
-	}
-
-	// Header{serialization id(5 bit), event, two way, req/response}
-	if header.SerialID = buf[2] & SERIAL_MASK; header.SerialID == Zero {
-		return nil, fmt.Errorf("serialization ID:%v", header.SerialID)
-	}
-
-	flag := buf[2] & FLAG_EVENT
-	if flag != Zero {
-		header.Type |= PackageHeartbeat
-	}
-	flag = buf[2] & FLAG_REQUEST
-	if flag != Zero {
-		header.Type |= PackageRequest
-		flag = buf[2] & FLAG_TWOWAY
-		if flag != Zero {
-			header.Type |= PackageRequest_TwoWay
-		}
-	} else {
-		header.Type |= PackageResponse
-		header.ResponseStatus = buf[3]
-		if header.ResponseStatus != Response_OK {
-			header.Type |= PackageResponse_Exception
-		}
-	}
-
-	// Header{req id}
-	header.ID = int64(binary.BigEndian.Uint64(buf[4:]))
-
-	// Header{body len}
-	header.BodyLen = int(binary.BigEndian.Uint32(buf[12:]))
-	if header.BodyLen < 0 {
-		return nil, ErrIllegalPackage
-	}
-
-	return header, err
-}
-
-func EncodeHeader(header *dubboHeader) []byte {
-	bs := make([]byte, 0)
-	switch {
-	case header.Type&PackageHeartbeat != 0x00:
-		if header.ResponseStatus == Zero {
-			bs = append(bs, DubboRequestHeartbeatHeader[:]...)
-		} else {
-			bs = append(bs, DubboResponseHeartbeatHeader[:]...)
-		}
-	case header.Type&PackageResponse != 0x00:
-		bs = append(bs, DubboResponseHeaderBytes[:]...)
-		if header.ResponseStatus != 0 {
-			bs[3] = header.ResponseStatus
-		}
-	case header.Type&PackageRequest_TwoWay != 0x00:
-		bs = append(bs, DubboRequestHeaderBytesTwoWay[:]...)
-	}
-	bs[2] |= header.SerialID & SERIAL_MASK
-	binary.BigEndian.PutUint64(bs[4:], uint64(header.ID))
-	binary.BigEndian.PutUint32(bs[12:], uint32(header.BodyLen))
-	return bs
-}

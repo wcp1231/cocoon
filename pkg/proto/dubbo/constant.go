@@ -1,6 +1,9 @@
 package dubbo
 
-import "errors"
+import (
+	"errors"
+	"regexp"
+)
 
 const (
 	GroupKey               = "group"
@@ -63,7 +66,6 @@ const (
 	DEFAULT_LEN                            = 8388608 // 8 * 1024 * 1024 default body max length
 
 	Zero             = byte(0x00)
-	Response_OK byte = 20
 )
 
 const (
@@ -100,3 +102,36 @@ const (
 	GenericAsync = "$invokeAsync"
 	Echo         = "$echo"
 )
+
+// ResponsePayload related consts
+const (
+	Response_OK                byte = 20
+	Response_CLIENT_TIMEOUT    byte = 30
+	Response_SERVER_TIMEOUT    byte = 31
+	Response_BAD_REQUEST       byte = 40
+	Response_BAD_RESPONSE      byte = 50
+	Response_SERVICE_NOT_FOUND byte = 60
+	Response_SERVICE_ERROR     byte = 70
+	Response_SERVER_ERROR      byte = 80
+	Response_CLIENT_ERROR      byte = 90
+
+	// According to "java dubbo" There are two cases of response:
+	// 		1. with attachments
+	// 		2. no attachments
+	RESPONSE_WITH_EXCEPTION                  int32 = 0
+	RESPONSE_VALUE                           int32 = 1
+	RESPONSE_NULL_VALUE                      int32 = 2
+	RESPONSE_WITH_EXCEPTION_WITH_ATTACHMENTS int32 = 3
+	RESPONSE_VALUE_WITH_ATTACHMENTS          int32 = 4
+	RESPONSE_NULL_VALUE_WITH_ATTACHMENTS     int32 = 5
+)
+
+// regular
+const (
+	JAVA_IDENT_REGEX = "(?:[_$a-zA-Z][_$a-zA-Z0-9]*)"
+	CLASS_DESC = "(?:L" + JAVA_IDENT_REGEX + "(?:\\/" + JAVA_IDENT_REGEX + ")*;)"
+	ARRAY_DESC = "(?:\\[+(?:(?:[VZBCDFIJS])|" + CLASS_DESC + "))"
+	DESC_REGEX = "(?:(?:[VZBCDFIJS])|" + CLASS_DESC + "|" + ARRAY_DESC + ")"
+)
+
+var DescRegex, _ = regexp.Compile(DESC_REGEX)
