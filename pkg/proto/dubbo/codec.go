@@ -129,7 +129,9 @@ func readRequestBody(header *dubboHeader, bb []byte) (*dubboRequest, error) {
 	if err != nil {
 		return nil, err
 	}
-	request.dubboVersion = dubboVersion.(string)
+	if dubboVersion != nil {
+		request.dubboVersion = dubboVersion.(string)
+	}
 	target, err := decoder.Decode()
 	if err != nil {
 		return nil, err

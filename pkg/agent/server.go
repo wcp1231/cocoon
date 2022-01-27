@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"cocoon/pkg/mock"
 	"context"
 	"github.com/cybozu-go/transocks"
 	"go.uber.org/zap"
@@ -17,6 +18,7 @@ type Server struct {
 	session    string
 	listenAddr *net.TCPAddr
 	rpcClient  *RpcClient
+	mockServer *mock.MockService
 	ctx        context.Context
 	shutdown   context.CancelFunc
 
@@ -30,6 +32,9 @@ func NewServer(ctx context.Context, logger *zap.Logger, appname, session, remote
 	wg := &sync.WaitGroup{}
 	closedChan := make(chan struct{})
 
+	mockServer := mock.NewMockService(logger)
+	mockServer.InitFromFile()
+
 	rpcClient := NewRpcClient(remote)
 
 	return &Server{
@@ -38,6 +43,7 @@ func NewServer(ctx context.Context, logger *zap.Logger, appname, session, remote
 		session:    session,
 		listenAddr: listenAddr,
 		rpcClient:  rpcClient,
+		mockServer: mockServer,
 		ctx:        innerCtx,
 		shutdown:   shutdown,
 

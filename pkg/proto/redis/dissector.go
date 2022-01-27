@@ -54,8 +54,8 @@ func (d *Dissector) dissectRequest() error {
 	request := object.GetRequest()
 	message.CaptureTime = time.Now()
 	message.Header = map[string]string{}
-	message.Header["cmd"] = request.Cmd
-	message.Header["key"] = request.Key
+	message.Header["CMD"] = request.Cmd
+	message.Header["KEY"] = request.Key
 	body := object.Pretty()
 	message.Body = &body
 	message.Raw = &request.Raw

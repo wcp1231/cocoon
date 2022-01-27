@@ -110,7 +110,7 @@ func (d *Dissector) dissectResponse() error {
 	message.CaptureTime = time.Now()
 	message.Header = map[string]string{}
 	for k, vv := range response.Header {
-		message.Header[k] = strings.Join(vv, ";")
+		message.Header[k] = strings.Join(vv, ";;")
 	}
 
 	message.Header["STATUS"] = response.Status

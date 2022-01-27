@@ -1,0 +1,34 @@
+{
+  "http": [
+    {
+      "request": {
+        "url": { "match": "/internal/box/v1/clientlog/user/61f170000000000000000000/online" }
+      },
+      "response": {
+        "status": "200",
+        "header": {
+          "Content-Type": "application/json;charset=UTF-8"
+        },
+        "body": "{\"errorCode\":0,\"text\":\"\",\"data\":[{\"id\":\"1\",\"password\":\"123\",\"business\":[]}],\"now\":\"2022-01-27T07:45:55.964Z\",\"version\":\"1.0.0\",\"ok\":true}"
+      }
+    }
+  ],
+  "redis": [
+    {
+      "request": {
+        "cmd": {
+          "match": "GET"
+        },
+        "key": {
+          "match": "user:u:61f170000000000000000000"
+        }
+      },
+      "response": {
+        "type": "string",
+        "string": ""
+      }
+    }
+  ],
+  "mongo": [],
+  "dubbo": []
+}
