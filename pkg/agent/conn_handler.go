@@ -10,44 +10,41 @@ import (
 )
 
 type conn struct {
-	c *net.TCPConn
+	c      *net.TCPConn
 	reader *bufio.Reader
-	addr string
+	addr   string
 }
 
 func newConn(c *net.TCPConn) *conn {
 	reader := bufio.NewReader(c)
 	addr := c.RemoteAddr().String()
 	return &conn{
-		c: c,
+		c:      c,
 		reader: reader,
-		addr: addr,
+		addr:   addr,
 	}
 }
 
 type ConnHandler struct {
 	server *Server
 	ctx    context.Context
-	Close  context.CancelFunc
 
-	inboundConn    *conn
-	outboundConn   *conn
+	inboundConn  *conn
+	outboundConn *conn
 
-	pc        *proto.ProtoClassifier
-	proto     *common.Protocol
+	pc    *proto.ProtoClassifier
+	proto *common.Protocol
 }
 
-func NewConnHandler(server *Server, inboundConn, outboundConn *net.TCPConn) *ConnHandler {
-	innerCtx, close := context.WithCancel(server.ctx)
+func NewConnHandler(server *Server, ctx context.Context, inboundConn, outboundConn *net.TCPConn) *ConnHandler {
 	pc := proto.NewProtoClassifier()
 	return &ConnHandler{
-		server:         server,
-		inboundConn:    newConn(inboundConn),
-		outboundConn:   newConn(outboundConn),
-		ctx:            innerCtx,
-		Close:          close,
+		server:       server,
+		inboundConn:  newConn(inboundConn),
+		outboundConn: newConn(outboundConn),
+		ctx:          ctx,
 
-		pc:        pc,
+		pc: pc,
 	}
 }
 

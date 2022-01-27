@@ -9,13 +9,13 @@ import (
 )
 
 type MockService struct {
-	logger *zap.Logger
+	logger    *zap.Logger
 	importers map[string]*ProtocolImposter
 }
 
 func NewMockService(logger *zap.Logger) *MockService {
 	return &MockService{
-		logger: logger,
+		logger:    logger,
 		importers: map[string]*ProtocolImposter{},
 	}
 }
@@ -43,17 +43,17 @@ func (m *MockService) AddImposter(proto string, importer RequestImposter) {
 }
 
 // TODO 临时测试
-func (m *MockService) InitFromFile() {
+func (m *MockService) InitFromFile() error {
 	fileData, err := os.ReadFile("./mock.json")
 	if err != nil {
 		m.logger.Error("Read mock file failed", zap.Error(err))
-		os.Exit(1)
+		return err
 	}
 	var config mockConfig
 	err = json.Unmarshal(fileData, &config)
 	if err != nil {
 		m.logger.Error("Parse mock json failed", zap.Error(err))
-		os.Exit(1)
+		return err
 	}
 	m.logger.Info("Init mock by config", zap.String("config", fmt.Sprintf("%v", config)))
 	for _, httpConfig := range config.Http {
@@ -64,4 +64,5 @@ func (m *MockService) InitFromFile() {
 		imposter := newRedisRequestMatcherFromConfig(redisConfig)
 		m.AddImposter(common.PROTOCOL_REDIS.Name, imposter)
 	}
+	return nil
 }

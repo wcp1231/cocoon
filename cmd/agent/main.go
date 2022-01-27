@@ -3,7 +3,6 @@ package main
 import (
 	"cocoon/pkg/agent"
 	log "cocoon/pkg/logger"
-	"cocoon/pkg/proto"
 	"context"
 	"flag"
 	"fmt"
@@ -24,11 +23,12 @@ var (
 	dumpCmd *flag.FlagSet
 	mockCmd *flag.FlagSet
 
-	appname string
-	session string
-	listen  string
-	remote  string
-	protocols string
+	transparent bool
+	appname     string
+	session     string
+	listen      string
+	remote      string
+	protocols   string
 
 	logger = log.NewLogger()
 )
@@ -38,7 +38,7 @@ func init() {
 	dumpCmd.StringVar(&appname, "app", "Application", "Application name")
 	dumpCmd.StringVar(&appname, "session", "", "Application session")
 	dumpCmd.StringVar(&listen, "listen", "0.0.0.0:1820", "Listen address")
-	dumpCmd.StringVar(&remote, "remote", "", "Remote agent address")
+	dumpCmd.BoolVar(&transparent, "transparent", false, "Transparent proxy mode")
 	dumpCmd.StringVar(&protocols, "protocol", "", "Protocol map.(eg '80:http,3306:mysql')")
 	mockCmd = flag.NewFlagSet(MOCK_CMD, flag.ExitOnError)
 	mockCmd.StringVar(&appname, "app", "", "Application name")
@@ -59,21 +59,23 @@ func main() {
 			dumpCmd.PrintDefaults()
 			os.Exit(1)
 		}
+		ensureSession()
 		listenAddr, err := net.ResolveTCPAddr("tcp", listen)
 		if err != nil {
 			logger.Fatal("error", zap.Error(err))
 			os.Exit(1)
 		}
 
-		proto.InitPresetClassifier(protocols)
-		ensureSession()
+		s := agent.NewServer(context.Background(), logger, appname, session)
+		err = s.Init(listenAddr, transparent, protocols)
+		if err != nil {
+			logger.Fatal("error", zap.Error(err))
+			os.Exit(1)
+		}
 
-		logger.Info("Start proxy mode.",
+		logger.Info("Start agent",
 			zap.String("app", appname),
-			zap.String("session", session),
-			zap.String("listen", listen),
-			zap.String("remote", remote))
-		s := agent.NewServer(context.Background(), logger, appname, session, remote, listenAddr)
+			zap.String("session", session))
 		go s.Start()
 
 		signalChan := make(chan os.Signal, 1)
@@ -85,13 +87,9 @@ func main() {
 		case syscall.SIGINT:
 			logger.Info("Shutting down proxy...")
 			s.Shutdown()
-			s.Wg.Wait()
-			<-s.ClosedChan
 		case syscall.SIGQUIT, syscall.SIGTERM:
 			logger.Info("Graceful Shutting down proxy...")
 			s.GracefulShutdown()
-			s.Wg.Wait()
-			<-s.ClosedChan
 		default:
 			logger.Info("Unexpected signal")
 			os.Exit(1)
@@ -111,6 +109,6 @@ func main() {
 
 func ensureSession() {
 	if session == "" {
-		session = time.Now().Format("2006-01-02_15:04:05")
+		session = appname + "@" + time.Now().Format("2006-01-02T15:04:05")
 	}
 }

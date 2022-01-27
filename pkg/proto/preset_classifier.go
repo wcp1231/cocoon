@@ -31,6 +31,9 @@ func classifyByDst(dst string) *common.Protocol {
 func processConfigString(portToProtocol string) {
 	protocols := strings.Split(portToProtocol, ",")
 	for _, proto := range protocols {
+		if len(proto) < 2 {
+			continue
+		}
 		pairs := strings.Split(proto, ":")
 		port := pairs[0]
 		protocol := nameToProtocol(pairs[1])

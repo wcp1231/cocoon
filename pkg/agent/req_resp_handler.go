@@ -5,20 +5,19 @@ import (
 	"cocoon/pkg/model/rpc"
 	"cocoon/pkg/proto"
 	"context"
-	"fmt"
 	"github.com/smallnest/rpcx/client"
 	"go.uber.org/zap"
 )
 
 // requestResponseHandler 处理 request-response 类型的连接
 type requestResponseHandler struct {
-	server *Server
-	ctx    context.Context
-	proto *common.Protocol
-	inboundConn *conn
+	server       *Server
+	ctx          context.Context
+	proto        *common.Protocol
+	inboundConn  *conn
 	outboundConn *conn
 
-	requestC chan *common.GenericMessage
+	requestC  chan *common.GenericMessage
 	responseC chan *common.GenericMessage
 }
 
@@ -26,13 +25,13 @@ func newRequestResponseHandler(ctx context.Context, server *Server, proto *commo
 	requestC := make(chan *common.GenericMessage)
 	responseC := make(chan *common.GenericMessage)
 	return &requestResponseHandler{
-		server: server,
-		ctx: ctx,
-		proto: proto,
-		inboundConn: inbound,
+		server:       server,
+		ctx:          ctx,
+		proto:        proto,
+		inboundConn:  inbound,
 		outboundConn: outbound,
 
-		requestC: requestC,
+		requestC:  requestC,
 		responseC: responseC,
 	}
 }
@@ -54,7 +53,6 @@ func (c *requestResponseHandler) handleRequest() {
 		select {
 		case request, more := <-c.requestC:
 			if !more {
-				fmt.Printf("%s no more request. %v\n", c.proto.String(), request)
 				return
 			}
 			c.server.logger.Debug("Conn request",
@@ -83,16 +81,16 @@ func (c *requestResponseHandler) tryToMock(request *common.GenericMessage) error
 }
 
 func (c *requestResponseHandler) tryToRecord(request, response *common.GenericMessage) error {
-	rpcReq := &rpc.RecordReq{
-		Session:    c.server.session,
-		IsOutgoing: true, // TODO
-		Proto:      c.proto,
-		ReqHeader:  request.Header,
-		RespHeader: response.Header,
-		ReqBody:    request.Body,
-		RespBody:   response.Body,
-	}
-	c.server.rpcClient.RecordRequestResponse(c.ctx, rpcReq)
+	//rpcReq := &rpc.RecordReq{
+	//	Session:    c.server.session,
+	//	IsOutgoing: true, // TODO
+	//	Proto:      c.proto,
+	//	ReqHeader:  request.Header,
+	//	RespHeader: response.Header,
+	//	ReqBody:    request.Body,
+	//	RespBody:   response.Body,
+	//}
+	//c.server.rpcClient.RecordRequestResponse(c.ctx, rpcReq)
 	return c.responseToInbound(response.Raw)
 }
 
