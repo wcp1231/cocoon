@@ -1,22 +1,23 @@
-package rpc_server
+package server
 
 import (
 	"cocoon/pkg/db"
 	"cocoon/pkg/model/common"
 	"cocoon/pkg/model/rpc"
 	"context"
+	"fmt"
 	"go.uber.org/zap"
 )
 
 type CocoonHandler struct {
 	logger     *zap.Logger
-	rpcService *RpcServer
+	server *CocoonServer
 }
 
-func NewCocoonHandler(logger *zap.Logger, rpcService *RpcServer) *CocoonHandler {
+func NewCocoonHandler(logger *zap.Logger, server *CocoonServer) *CocoonHandler {
 	return &CocoonHandler{
 		logger:     logger,
-		rpcService: rpcService,
+		server: server,
 	}
 }
 
@@ -24,7 +25,7 @@ func (c *CocoonHandler) ClientPostStart(ctx context.Context, args *rpc.PostStart
 	c.logger.Debug("Receive client post start",
 		zap.String("app", args.Appname),
 		zap.String("session", args.Session))
-	c.rpcService.database.EnsureApplicationAndSession(args.Appname, args.Session)
+	c.server.database.EnsureApplicationAndSession(args.Appname, args.Session)
 	return nil
 }
 
@@ -38,7 +39,7 @@ func (c *CocoonHandler) Upload(ctx context.Context, args *rpc.UploadReq, resp *r
 		zap.Uint64("seq", args.Packet.Seq),
 		zap.Int("size", len(args.Packet.Payload)))
 	dbModel := c.generatePacketDBModel(args.Session, args.Packet)
-	c.rpcService.database.AppendTcpPacket(dbModel)
+	c.server.database.AppendTcpPacket(dbModel)
 	return nil
 }
 
@@ -48,22 +49,22 @@ func (c *CocoonHandler) ConnClose(ctx context.Context, args *rpc.ConnCloseReq, r
 		zap.String("direction", args.Direction.String()),
 		zap.String("dest", args.Destination))
 	//dbModel := c.generatePacketDBModel(args.Session, args.Packet)
-	//c.rpcService.database.AppendTcpPacket(dbModel)
+	//c.service.database.AppendTcpPacket(dbModel)
 	return nil
 }
 
 func (c *CocoonHandler) Analysis(ctx context.Context, args *rpc.AnalysisReq, resp *rpc.AnalysisResp) error {
 	c.logger.Debug("Handle analysis request", zap.String("session", args.Session))
-	err := c.rpcService.dissectManager.Dissect(args.Session, c.rpcService.database)
+	err := c.server.dissectManager.Dissect(args.Session, c.server.database)
 	resp.Error = err
 	return nil
 }
 
 // RequestOutbound 请求 mock 数据
 func (c *CocoonHandler) RequestOutbound(ctx context.Context, args *rpc.OutboundReq, resp *rpc.OutboundResp) error {
-	c.logger.Debug("Handle outbound request",
-		zap.String("session", args.Session),
-		zap.String("proto", args.Proto.String()))
+	//c.logger.Debug("Handle outbound request",
+	//	zap.String("session", args.Session),
+	//	zap.String("proto", args.Proto.String()))
 	//body := []byte("HTTP/1.1 200 OK\r\nContent-Length: 7\r\n\r\nMock OK")
 	//resp.Body = &body
 	resp.OpType = rpc.OP_PASS
@@ -73,9 +74,9 @@ func (c *CocoonHandler) RequestOutbound(ctx context.Context, args *rpc.OutboundR
 func (c *CocoonHandler) RecordRequestResponse(ctx context.Context, args *rpc.RecordReq, resp *rpc.RecordResp) error {
 	c.logger.Debug("Handle record call",
 		zap.String("session", args.Session),
-		zap.String("proto", args.Proto.String()))
-	dbModel := c.generateRecordDBModel(args)
-	c.rpcService.database.AppendRecord(dbModel)
+		zap.String("proto", fmt.Sprintf("%+v", args.Proto)))
+	//dbModel := c.generateRecordDBModel(args)
+	//c.server.database.AppendRecord(dbModel)
 	return nil
 }
 

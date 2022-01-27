@@ -1,4 +1,4 @@
-package rpc_server
+package server
 
 import (
 	"cocoon/pkg/db"
@@ -9,24 +9,25 @@ import (
 	"go.uber.org/zap"
 )
 
-type RpcServer struct {
+type CocoonServer struct {
 	server *server.Server
 	logger *zap.Logger
 
 	database       *db.Database
 	dissectManager *dissector.DissectManager
+	httpServer *CocoonHttpHandler
 	//tcpManager     *tcp.TcpManager
 }
 
-func NewRpcServer(logger *zap.Logger, dbUri string) *RpcServer {
+func NewCocoonServer(logger *zap.Logger, dbUri string) *CocoonServer {
 	rpcxServer := server.NewServer()
-	//resultC := make(chan *traffic.StreamItem, 1024)
 	ctx := context.Background()
 	database := db.NewDatabase(ctx, logger, dbUri)
 	dissectManager := dissector.NewDissectManager(ctx, logger)
 	//tcpManager := tcp.NewTcpManager(logger, resultC)
 
-	rpcServer := &RpcServer{
+
+	server := &CocoonServer{
 		server:   rpcxServer,
 		logger:   logger,
 		database: database,
@@ -34,11 +35,17 @@ func NewRpcServer(logger *zap.Logger, dbUri string) *RpcServer {
 		dissectManager: dissectManager,
 	}
 
-	handler := NewCocoonHandler(logger, rpcServer)
+	server.httpServer = NewCocoonHttpHandler(logger, server)
+	handler := NewCocoonHandler(logger, server)
 	rpcxServer.RegisterName(rpc.COCOON_SERVER_NAME, handler, "")
-	return rpcServer
+	return server
 }
 
-func (r *RpcServer) Start(listen string) error {
+func (r *CocoonServer) Start(listen string) error {
 	return r.server.Serve("tcp", listen)
+}
+
+func (r *CocoonServer) StartHttp(listen string) error {
+	r.httpServer.srv.Addr = listen
+	return r.httpServer.srv.ListenAndServe()
 }
