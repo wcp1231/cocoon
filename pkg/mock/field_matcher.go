@@ -17,9 +17,9 @@ func (s *StringMatcher) Match(field string) bool {
 }
 
 type RegexMatcher struct {
-	expect *regexp.Regexp
+	regex *regexp.Regexp
 }
 
 func (r *RegexMatcher) Match(field string) bool {
-	return r.expect.MatchString(field)
+	return r.regex.MatchString(field)
 }

@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"go.uber.org/zap"
 	"os"
+	"sync/atomic"
 )
 
 type MockService struct {
 	logger    *zap.Logger
 	importers map[string]*ProtocolImposter
+
+	id int32
 }
 
 func NewMockService(logger *zap.Logger) *MockService {
@@ -42,6 +45,40 @@ func (m *MockService) AddImposter(proto string, importer RequestImposter) {
 	m.logger.Info("Add imposter", zap.String("proto", proto), zap.String("map", fmt.Sprintf("%+v", m.importers)))
 }
 
+func (m *MockService) DeleteImposter(id int32) {
+	for _, protoImposter := range m.importers {
+		protoImposter.DeleteRequestImposter(id)
+	}
+	m.logger.Info("Delete imposter", zap.Int32("id", id))
+}
+
+func (m *MockService) CreateImposter(config mockConfig) {
+	m.logger.Info("Create mock by config", zap.String("config", fmt.Sprintf("%v", config)))
+	for _, httpConfig := range config.Http {
+		id := atomic.AddInt32(&m.id, 1)
+		imposter := newHttpRequestMatcherFromConfig(httpConfig, id)
+		m.AddImposter(common.PROTOCOL_HTTP.Name, imposter)
+	}
+	for _, redisConfig := range config.Redis {
+		id := atomic.AddInt32(&m.id, 1)
+		imposter := newRedisRequestMatcherFromConfig(redisConfig, id)
+		m.AddImposter(common.PROTOCOL_REDIS.Name, imposter)
+	}
+}
+
+func (m *MockService) GetConfig() map[string][]interface{} {
+	result := make(map[string][]interface{})
+	ims, ok := m.importers[common.PROTOCOL_HTTP.Name]
+	if ok && ims != nil {
+		result[common.PROTOCOL_HTTP.Name] = ims.GetConfig()
+	}
+	ims, ok = m.importers[common.PROTOCOL_REDIS.Name]
+	if ok && ims != nil {
+		result[common.PROTOCOL_REDIS.Name] = ims.GetConfig()
+	}
+	return result
+}
+
 // TODO 临时测试
 func (m *MockService) InitFromFile() error {
 	fileData, err := os.ReadFile("./mock.json")
@@ -55,14 +92,6 @@ func (m *MockService) InitFromFile() error {
 		m.logger.Error("Parse mock json failed", zap.Error(err))
 		return err
 	}
-	m.logger.Info("Init mock by config", zap.String("config", fmt.Sprintf("%v", config)))
-	for _, httpConfig := range config.Http {
-		imposter := newHttpRequestMatcherFromConfig(httpConfig)
-		m.AddImposter(common.PROTOCOL_HTTP.Name, imposter)
-	}
-	for _, redisConfig := range config.Redis {
-		imposter := newRedisRequestMatcherFromConfig(redisConfig)
-		m.AddImposter(common.PROTOCOL_REDIS.Name, imposter)
-	}
+	m.CreateImposter(config)
 	return nil
 }

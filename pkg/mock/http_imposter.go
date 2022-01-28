@@ -14,6 +14,9 @@ import (
 
 
 type HttpRequestMatcher struct {
+	id int32
+	config httpMockConfig
+
 	method FieldMatcher
 	host FieldMatcher
 	url FieldMatcher
@@ -24,8 +27,11 @@ type HttpRequestMatcher struct {
 	respBody string
 }
 
-func newHttpRequestMatcherFromConfig(config httpMockConfig) *HttpRequestMatcher {
-	matcher := &HttpRequestMatcher{}
+func newHttpRequestMatcherFromConfig(config httpMockConfig, id int32) *HttpRequestMatcher {
+	matcher := &HttpRequestMatcher{
+		id: id,
+		config: config,
+	}
 	if config.Request.Method != "" {
 		matcher.method = &StringMatcher{
 			expect: config.Request.Method,
@@ -44,7 +50,7 @@ func newHttpRequestMatcherFromConfig(config httpMockConfig) *HttpRequestMatcher 
 		matcher.reqHeader = map[string]FieldMatcher{}
 	}
 	for k, v := range config.Request.Header {
-		matcher.reqHeader[k] = newFieldMatcher(&v)
+		matcher.reqHeader[k] = newFieldMatcher(v)
 	}
 
 	matcher.status = config.Response.Status
@@ -65,7 +71,7 @@ func newFieldMatcher(field *fieldMockConfig) FieldMatcher {
 		os.Exit(1)
 	}
 	return &RegexMatcher{
-		expect: regex,
+		regex: regex,
 	}
 }
 
@@ -120,4 +126,13 @@ func (h *HttpRequestMatcher) Data() *[]byte {
 	_ = response.Write(buf)
 	bs := buf.Bytes()
 	return &bs
+}
+
+func (h *HttpRequestMatcher) ID() int32 {
+	return h.id
+}
+
+func (h *HttpRequestMatcher) GetConfig() interface{} {
+	h.config.Id = h.id
+	return h.config
 }

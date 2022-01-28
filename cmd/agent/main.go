@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"go.uber.org/zap"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,7 +25,8 @@ var (
 	transparent bool
 	appname     string
 	session     string
-	listen      string
+	httpListen      string
+	proxyListen      string
 	remote      string
 	protocols   string
 
@@ -37,12 +37,13 @@ func init() {
 	dumpCmd = flag.NewFlagSet(DUMP_CMD, flag.ExitOnError)
 	dumpCmd.StringVar(&appname, "app", "Application", "Application name")
 	dumpCmd.StringVar(&appname, "session", "", "Application session")
-	dumpCmd.StringVar(&listen, "listen", "0.0.0.0:1820", "Listen address")
+	dumpCmd.StringVar(&proxyListen, "proxy-listen", "0.0.0.0:7820", "Listen address")
+	dumpCmd.StringVar(&httpListen, "http-listen", "0.0.0.0:7070", "Listen address")
 	dumpCmd.BoolVar(&transparent, "transparent", false, "Transparent proxy mode")
 	dumpCmd.StringVar(&protocols, "protocol", "", "Protocol map.(eg '80:http,3306:mysql')")
 	mockCmd = flag.NewFlagSet(MOCK_CMD, flag.ExitOnError)
 	mockCmd.StringVar(&appname, "app", "", "Application name")
-	mockCmd.StringVar(&listen, "listen", "0.0.0.0:1820", "Listen address")
+	mockCmd.StringVar(&proxyListen, "listen", "0.0.0.0:7820", "Listen address")
 	mockCmd.StringVar(&remote, "remote", "", "Remote agent address")
 }
 
@@ -60,14 +61,9 @@ func main() {
 			os.Exit(1)
 		}
 		ensureSession()
-		listenAddr, err := net.ResolveTCPAddr("tcp", listen)
-		if err != nil {
-			logger.Fatal("error", zap.Error(err))
-			os.Exit(1)
-		}
 
-		s := agent.NewServer(context.Background(), logger, appname, session)
-		err = s.Init(listenAddr, transparent, protocols)
+		s := agent.NewAgent(context.Background(), logger, appname, session)
+		err = s.Init(proxyListen, httpListen, transparent, protocols)
 		if err != nil {
 			logger.Fatal("error", zap.Error(err))
 			os.Exit(1)
@@ -76,7 +72,7 @@ func main() {
 		logger.Info("Start agent",
 			zap.String("app", appname),
 			zap.String("session", session))
-		go s.Start()
+		s.Start()
 
 		signalChan := make(chan os.Signal, 1)
 		signal.Ignore()

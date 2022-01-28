@@ -7,6 +7,8 @@ import (
 )
 
 type RedisRequestMatcher struct {
+	id int32
+	config redisMockConfig
 	cmd FieldMatcher
 	key FieldMatcher
 
@@ -14,8 +16,11 @@ type RedisRequestMatcher struct {
 	respBody []byte
 }
 
-func newRedisRequestMatcherFromConfig(config redisMockConfig) *RedisRequestMatcher {
-	matcher := &RedisRequestMatcher{}
+func newRedisRequestMatcherFromConfig(config redisMockConfig, id int32) *RedisRequestMatcher {
+	matcher := &RedisRequestMatcher{
+		id: id,
+		config: config,
+	}
 	if config.Request.Cmd != nil {
 		matcher.cmd = newFieldMatcher(config.Request.Cmd)
 	}
@@ -70,4 +75,13 @@ func (h *RedisRequestMatcher) Match(req *common.GenericMessage) bool {
 
 func (h *RedisRequestMatcher) Data() *[]byte {
 	return &h.respBody
+}
+
+func (h *RedisRequestMatcher) ID() int32 {
+	return h.id
+}
+
+func (h *RedisRequestMatcher) GetConfig() interface{} {
+	h.config.Id = h.id
+	return h.config
 }

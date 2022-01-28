@@ -14,7 +14,7 @@ type httpRequestMockConfig struct {
 	Method string `json:"method,omitempty"`
 	Host *fieldMockConfig `json:"host,omitempty"`
 	Url *fieldMockConfig `json:"url,omitempty"`
-	Header map[string]fieldMockConfig `json:"header,omitempty"`
+	Header map[string]*fieldMockConfig `json:"header,omitempty"`
 }
 
 type httpResponseMockConfig struct {
@@ -24,6 +24,7 @@ type httpResponseMockConfig struct {
 }
 
 type httpMockConfig struct {
+	Id int32 `json:"id,omitempty"`
 	Request httpRequestMockConfig `json:"request"`
 	Response httpResponseMockConfig `json:"response"`
 }
@@ -43,6 +44,7 @@ type redisResponseMockConfig struct {
 }
 
 type redisMockConfig struct {
+	Id int32 `json:"id,omitempty"`
 	Request redisRequestMockConfig `json:"request"`
 	Response redisResponseMockConfig `json:"response"`
 }

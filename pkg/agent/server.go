@@ -4,8 +4,10 @@ import (
 	"cocoon/pkg/mock"
 	"cocoon/pkg/proto"
 	"context"
+	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 	"net"
+	"net/http"
 )
 
 type AgentProxy interface {
@@ -15,17 +17,18 @@ type AgentProxy interface {
 	CloseWait()
 }
 
-type Server struct {
+type Agent struct {
 	ctx        context.Context
 	logger     *zap.Logger
 	appname    string
 	session    string
 	proxy      AgentProxy
+	httpServer *http.Server
 	mockServer *mock.MockService
 }
 
-func NewServer(ctx context.Context, logger *zap.Logger, appname, session string) *Server {
-	return &Server{
+func NewAgent(ctx context.Context, logger *zap.Logger, appname, session string) *Agent {
+	return &Agent{
 		ctx:     ctx,
 		logger:  logger,
 		appname: appname,
@@ -33,36 +36,79 @@ func NewServer(ctx context.Context, logger *zap.Logger, appname, session string)
 	}
 }
 
-func (s *Server) Init(listenAddr *net.TCPAddr, transparent bool, protocols string) error {
-	if transparent {
-		s.proxy = NewTransparentProxy(listenAddr, s)
-	} else {
-		s.proxy = NewSocks5Proxy(listenAddr, s)
+func (s *Agent) Init(proxyListen, httpListen string, transparent bool, protocols string) error {
+	err := s.initProxy(proxyListen, transparent)
+	if err != nil {
+		return err
 	}
 
 	proto.InitPresetClassifier(protocols)
 
 	s.mockServer = mock.NewMockService(s.logger)
+	s.initHttp(httpListen)
+
 	return s.mockServer.InitFromFile()
 }
 
-func (s *Server) Start() error {
-	return s.proxy.ProxyStart()
+func (s *Agent) initProxy(listen string, transparent bool) error {
+	listenAddr, err := net.ResolveTCPAddr("tcp", listen)
+	if err != nil {
+		s.logger.Fatal("error", zap.Error(err))
+		return err
+	}
+
+	if transparent {
+		s.proxy = NewTransparentProxy(listenAddr, s)
+	} else {
+		s.proxy = NewSocks5Proxy(listenAddr, s)
+	}
+	return nil
 }
 
-func (s *Server) HandleConn(ctx context.Context, inboundConn, outboundConn *net.TCPConn) {
+func (s *Agent) initHttp(listen string) {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/api/mocks/", s.mockServer.ListMocks).Methods("GET")
+	router.HandleFunc("/api/mocks/", s.mockServer.AddMocks).Methods("POST")
+	router.HandleFunc("/api/mocks/{id}", s.mockServer.EditMocks).Methods("POST")
+	router.HandleFunc("/api/mocks/{id}", s.mockServer.DeleteMocks).Methods("DELETE")
+
+	s.httpServer = &http.Server{
+		Addr: listen,
+		Handler: router,
+	}
+}
+
+func (s *Agent) Start() {
+	go func() {
+		s.logger.Info("Listen http at",
+			zap.String("listen", s.httpServer.Addr))
+		err := s.httpServer.ListenAndServe()
+		if err != nil {
+			s.logger.Fatal("Listen http failed", zap.Error(err))
+		}
+	}()
+	go func() {
+		err := s.proxy.ProxyStart()
+		if err != nil {
+			s.logger.Fatal("Listen proxy failed", zap.Error(err))
+		}
+	}()
+}
+
+func (s *Agent) HandleConn(ctx context.Context, inboundConn, outboundConn *net.TCPConn) {
 	p := NewConnHandler(s, ctx, inboundConn, outboundConn)
 	p.Start()
 }
 
 // Shutdown agent.
-func (s *Server) Shutdown() {
+func (s *Agent) Shutdown() {
 	s.proxy.Shutdown()
 	s.proxy.CloseWait()
 }
 
 // GracefulShutdown agent.
-func (s *Server) GracefulShutdown() {
+func (s *Agent) GracefulShutdown() {
 	s.proxy.GracefulShutdown()
 	s.proxy.CloseWait()
 }

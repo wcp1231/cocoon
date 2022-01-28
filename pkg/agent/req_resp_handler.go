@@ -11,7 +11,7 @@ import (
 
 // requestResponseHandler 处理 request-response 类型的连接
 type requestResponseHandler struct {
-	server       *Server
+	server       *Agent
 	ctx          context.Context
 	proto        *common.Protocol
 	inboundConn  *conn
@@ -21,7 +21,7 @@ type requestResponseHandler struct {
 	responseC chan *common.GenericMessage
 }
 
-func newRequestResponseHandler(ctx context.Context, server *Server, proto *common.Protocol, inbound, outbound *conn) *requestResponseHandler {
+func newRequestResponseHandler(ctx context.Context, server *Agent, proto *common.Protocol, inbound, outbound *conn) *requestResponseHandler {
 	requestC := make(chan *common.GenericMessage)
 	responseC := make(chan *common.GenericMessage)
 	return &requestResponseHandler{

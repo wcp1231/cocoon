@@ -15,7 +15,7 @@ import (
 type Socks5Proxy struct {
 	logger     *zap.Logger
 	listenAddr *net.TCPAddr
-	server     *Server
+	server     *Agent
 	listener   *net.TCPListener
 
 	ctx        context.Context
@@ -24,7 +24,7 @@ type Socks5Proxy struct {
 	ClosedChan chan struct{}
 }
 
-func NewSocks5Proxy(listenAddr *net.TCPAddr, server *Server) *Socks5Proxy {
+func NewSocks5Proxy(listenAddr *net.TCPAddr, server *Agent) *Socks5Proxy {
 	innerCtx, shutdown := context.WithCancel(server.ctx)
 	wg := &sync.WaitGroup{}
 	closedChan := make(chan struct{})

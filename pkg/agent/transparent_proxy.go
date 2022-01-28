@@ -13,7 +13,7 @@ import (
 type TransparentProxy struct {
 	logger     *zap.Logger
 	listenAddr *net.TCPAddr
-	server     *Server
+	server     *Agent
 	listener   *net.TCPListener
 
 	ctx        context.Context
@@ -22,7 +22,7 @@ type TransparentProxy struct {
 	ClosedChan chan struct{}
 }
 
-func NewTransparentProxy(listenAddr *net.TCPAddr, server *Server) *TransparentProxy {
+func NewTransparentProxy(listenAddr *net.TCPAddr, server *Agent) *TransparentProxy {
 	innerCtx, shutdown := context.WithCancel(server.ctx)
 	wg := &sync.WaitGroup{}
 	closedChan := make(chan struct{})

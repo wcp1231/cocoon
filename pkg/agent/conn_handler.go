@@ -26,7 +26,7 @@ func newConn(c *net.TCPConn) *conn {
 }
 
 type ConnHandler struct {
-	server *Server
+	server *Agent
 	ctx    context.Context
 
 	inboundConn  *conn
@@ -36,7 +36,7 @@ type ConnHandler struct {
 	proto *common.Protocol
 }
 
-func NewConnHandler(server *Server, ctx context.Context, inboundConn, outboundConn *net.TCPConn) *ConnHandler {
+func NewConnHandler(server *Agent, ctx context.Context, inboundConn, outboundConn *net.TCPConn) *ConnHandler {
 	pc := proto.NewProtoClassifier()
 	return &ConnHandler{
 		server:       server,
