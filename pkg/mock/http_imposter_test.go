@@ -9,19 +9,19 @@ import (
 func TestRequestImporter_Match(t *testing.T) {
 	req := &common.GenericMessage{
 		Header: map[string]string{
-			"METHOD": "GET",
-			"HOST": "box.http.svc.dev.keep",
-			"URL": "/internal/user/61f170000000000000000000",
-			"Accept": "*/*",
+			"METHOD":          "GET",
+			"HOST":            "box.http.svc.dev.keep",
+			"URL":             "/internal/user/61f170000000000000000000",
+			"Accept":          "*/*",
 			"Accept-Encoding": "gzip",
-			"Connection": "Keep-Alive",
-			"User-Agent": "okhttp/3.14.2",
+			"Connection":      "Keep-Alive",
+			"User-Agent":      "okhttp/3.14.2",
 		},
 	}
 	config := httpMockConfig{
 		Request: httpRequestMockConfig{
 			Url: &fieldMockConfig{
-				Match: "/internal/user/61f170000000000000000000",
+				Equals: "/internal/user/61f170000000000000000000",
 			},
 		},
 		Response: httpResponseMockConfig{
@@ -32,7 +32,7 @@ func TestRequestImporter_Match(t *testing.T) {
 			Body: "{}",
 		},
 	}
-	matcher := newHttpRequestMatcherFromConfig(config)
+	matcher := newHttpRequestMatcherFromConfig(config, 0)
 
 	if !matcher.Match(req) {
 		t.Fatal("HttpRequestMatcher failed")

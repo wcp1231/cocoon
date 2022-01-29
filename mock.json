@@ -2,7 +2,7 @@
   "http": [
     {
       "request": {
-        "url": { "match": "/internal/box/v1/clientlog/user/61f170000000000000000000/online" }
+        "url": { "equals": "/internal/box/v1/clientlog/user/61f170000000000000000000/online" }
       },
       "response": {
         "status": "200",
@@ -17,15 +17,46 @@
     {
       "request": {
         "cmd": {
-          "match": "GET"
+          "equals": "GET"
         },
         "key": {
-          "match": "user:u:61f170000000000000000000"
+          "equals": "user:u:61f170000000000000000000"
         }
       },
       "response": {
         "type": "string",
-        "string": ""
+        "string": "some data"
+      }
+    },
+    {
+      "request": {
+        "cmd": {
+          "equals": "GET"
+        },
+        "key": {
+          "equals": "user:61f170000000000000000000"
+        }
+      },
+      "response": {
+        "type": "array",
+        "array": ["some", "array", "data"]
+      }
+    },
+    {
+      "request": {
+        "cmd": {
+          "equals": "GET"
+        },
+        "key": {
+          "equals": "user:61f170000000000000000000"
+        }
+      },
+      "response": {
+        "type": "hash",
+        "hash": {
+          "key-1": "val-1",
+          "key-2": "val-2"
+        }
       }
     }
   ],

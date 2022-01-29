@@ -11,25 +11,23 @@ import (
 	"strings"
 )
 
-
-
 type HttpRequestMatcher struct {
-	id int32
+	id     int32
 	config httpMockConfig
 
-	method FieldMatcher
-	host FieldMatcher
-	url FieldMatcher
+	method    FieldMatcher
+	host      FieldMatcher
+	url       FieldMatcher
 	reqHeader map[string]FieldMatcher
 
-	status string
+	status     string
 	respHeader map[string]string
-	respBody string
+	respBody   string
 }
 
 func newHttpRequestMatcherFromConfig(config httpMockConfig, id int32) *HttpRequestMatcher {
 	matcher := &HttpRequestMatcher{
-		id: id,
+		id:     id,
 		config: config,
 	}
 	if config.Request.Method != "" {
@@ -60,9 +58,9 @@ func newHttpRequestMatcherFromConfig(config httpMockConfig, id int32) *HttpReque
 }
 
 func newFieldMatcher(field *fieldMockConfig) FieldMatcher {
-	if field.Match != "" {
+	if field.Equals != "" {
 		return &StringMatcher{
-			expect: field.Match,
+			expect: field.Equals,
 		}
 	}
 	regex, err := regexp.Compile(field.Regex)
