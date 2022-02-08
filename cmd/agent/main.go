@@ -4,9 +4,11 @@ import (
 	"cocoon/pkg/agent"
 	log "cocoon/pkg/logger"
 	"context"
+	"embed"
 	"flag"
 	"fmt"
 	"go.uber.org/zap"
+	"io/fs"
 	"os"
 	"os/signal"
 	"syscall"
@@ -25,15 +27,25 @@ var (
 	transparent bool
 	appname     string
 	session     string
-	httpListen      string
-	proxyListen      string
+	httpListen  string
+	proxyListen string
 	remote      string
 	protocols   string
 
 	logger = log.NewLogger()
+
+	//go:embed statics/*
+	staticFiles embed.FS
+	statics     fs.FS
 )
 
 func init() {
+	fs, err := fs.Sub(staticFiles, "statics")
+	if err != nil {
+		panic(err)
+	}
+	statics = fs
+
 	dumpCmd = flag.NewFlagSet(DUMP_CMD, flag.ExitOnError)
 	dumpCmd.StringVar(&appname, "app", "Application", "Application name")
 	dumpCmd.StringVar(&appname, "session", "", "Application session")
@@ -63,7 +75,7 @@ func main() {
 		ensureSession()
 
 		s := agent.NewAgent(context.Background(), logger, appname, session)
-		err = s.Init(proxyListen, httpListen, transparent, protocols)
+		err = s.Init(proxyListen, httpListen, transparent, protocols, statics)
 		if err != nil {
 			logger.Fatal("error", zap.Error(err))
 			os.Exit(1)

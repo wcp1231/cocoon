@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+	"io/fs"
 	"net"
 	"net/http"
 	"sync/atomic"
@@ -41,7 +42,7 @@ func NewAgent(ctx context.Context, logger *zap.Logger, appname, session string) 
 	}
 }
 
-func (s *Agent) Init(proxyListen, httpListen string, transparent bool, protocols string) error {
+func (s *Agent) Init(proxyListen, httpListen string, transparent bool, protocols string, statics fs.FS) error {
 	err := s.initProxy(proxyListen, transparent)
 	if err != nil {
 		return err
@@ -51,7 +52,7 @@ func (s *Agent) Init(proxyListen, httpListen string, transparent bool, protocols
 
 	s.mockServer = mock.NewMockService(s.logger)
 	s.recordServer = record.NewRecordService(s.logger)
-	s.initHttp(httpListen)
+	s.initHttp(httpListen, statics)
 
 	return s.mockServer.InitFromFile()
 }
@@ -71,7 +72,7 @@ func (s *Agent) initProxy(listen string, transparent bool) error {
 	return nil
 }
 
-func (s *Agent) initHttp(listen string) {
+func (s *Agent) initHttp(listen string, statics fs.FS) {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/mocks/", s.mockServer.ListMocks).Methods("GET")
@@ -80,6 +81,9 @@ func (s *Agent) initHttp(listen string) {
 	router.HandleFunc("/api/mocks/{id}", s.mockServer.DeleteMocks).Methods("DELETE")
 
 	router.HandleFunc("/api/ws", s.recordServer.ServeWs)
+
+	fileServer := http.FileServer(http.FS(statics))
+	router.PathPrefix("/").Handler(fileServer)
 
 	s.httpServer = &http.Server{
 		Addr:    listen,

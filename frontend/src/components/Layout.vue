@@ -87,7 +87,7 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style>
-.layout-sidebar {
+.layout-sidebar.p-sidebar-left {
   width: 200px;
 }
 .layout-sidebar .p-sidebar-header {
