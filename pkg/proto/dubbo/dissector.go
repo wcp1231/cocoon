@@ -35,29 +35,29 @@ type dubboHeader struct {
 }
 
 type dubboRequest struct {
-	header *dubboHeader
-	dubboVersion string
-	target string
+	header         *dubboHeader
+	dubboVersion   string
+	target         string
 	serviceVersion string
-	method string
-	args map[string]interface{}
-	attachments map[string]interface{}
+	method         string
+	args           map[string]interface{}
+	attachments    map[string]interface{}
 }
 
 type dubboResponse struct {
-	header *dubboHeader
+	header       *dubboHeader
 	dubboVersion string
-	exception string
-	respObj interface{}
-	attachments map[string]interface{}
+	exception    string
+	respObj      interface{}
+	attachments  map[string]interface{}
 }
 
 func (d *dubboHeader) isRequest() bool {
-	return d.Type & PackageRequest != 0x00
+	return d.Type&PackageRequest != 0x00
 }
 
 func (d *dubboHeader) hasException() bool {
-	return d.Type & PackageResponse_Exception != 0x00
+	return d.Type&PackageResponse_Exception != 0x00
 }
 
 func NewRequestDissector(reqC, respC chan *common.GenericMessage) *Dissector {
@@ -96,6 +96,7 @@ func (d *Dissector) dissectRequest() error {
 		fmt.Printf("Dubbo read request failed. %v\n", err)
 		return err
 	}
+	message.CaptureNow()
 	d.requestC <- message
 	return nil
 }
@@ -107,8 +108,7 @@ func (d *Dissector) dissectResponse() error {
 		fmt.Printf("Dubbo read response failed. %v\n", err)
 		return err
 	}
-
+	message.CaptureNow()
 	d.responseC <- message
 	return nil
 }
-

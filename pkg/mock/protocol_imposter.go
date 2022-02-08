@@ -8,7 +8,7 @@ import (
 type RequestImposter interface {
 	ID() int32
 	Match(req *common.GenericMessage) bool
-	Data() *[]byte
+	Data() *common.GenericMessage
 	GetConfig() interface{}
 }
 

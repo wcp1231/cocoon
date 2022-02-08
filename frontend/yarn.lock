@@ -1277,6 +1277,21 @@
     html-tags "^3.1.0"
     svg-tags "^1.0.0"
 
+"@vue/babel-plugin-jsx@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@vue/babel-plugin-jsx/-/babel-plugin-jsx-1.1.1.tgz#0c5bac27880d23f89894cd036a37b55ef61ddfc1"
+  integrity sha512-j2uVfZjnB5+zkcbc/zsOc0fSNGCMMjaEXP52wdwdIfn0qjFfEYpYZBFKFg+HHnQeJCVrjOeO0YxgaL7DMrym9w==
+  dependencies:
+    "@babel/helper-module-imports" "^7.0.0"
+    "@babel/plugin-syntax-jsx" "^7.0.0"
+    "@babel/template" "^7.0.0"
+    "@babel/traverse" "^7.0.0"
+    "@babel/types" "^7.0.0"
+    "@vue/babel-helper-vue-transform-on" "^1.0.2"
+    camelcase "^6.0.0"
+    html-tags "^3.1.0"
+    svg-tags "^1.0.0"
+
 "@vue/babel-plugin-transform-vue-jsx@^1.2.1":
   version "1.2.1"
   resolved "https://registry.nlark.com/@vue/babel-plugin-transform-vue-jsx/download/@vue/babel-plugin-transform-vue-jsx-1.2.1.tgz#646046c652c2f0242727f34519d917b064041ed7"
@@ -4151,6 +4166,13 @@ file-entry-cache@^5.0.1:
   dependencies:
     flat-cache "^2.0.1"
 
+file-entry-cache@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/file-entry-cache/-/file-entry-cache-6.0.1.tgz#211b2dd9659cb0394b073e7323ac3c933d522027"
+  integrity sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==
+  dependencies:
+    flat-cache "^3.0.4"
+
 file-loader@^4.2.0:
   version "4.3.0"
   resolved "https://registry.npmmirror.com/file-loader/download/file-loader-4.3.0.tgz#780f040f729b3d18019f20605f723e844b8a58af"
@@ -4258,10 +4280,23 @@ flat-cache@^2.0.1:
     rimraf "2.6.3"
     write "1.0.3"
 
+flat-cache@^3.0.4:
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/flat-cache/-/flat-cache-3.0.4.tgz#61b0338302b2fe9f957dcc32fc2a87f1c3048b11"
+  integrity sha512-dm9s5Pw7Jc0GvMYbshN6zchCA9RgQlzzEZX3vylR9IqFfS8XciblUXOKfW6SiuJ0e13eDYZoZV5wdrev7P3Nwg==
+  dependencies:
+    flatted "^3.1.0"
+    rimraf "^3.0.2"
+
 flatted@^2.0.0:
   version "2.0.2"
   resolved "https://registry.npmmirror.com/flatted/download/flatted-2.0.2.tgz#4575b21e2bcee7434aa9be662f4b7b5f9c2b5138"
   integrity sha1-RXWyHivO50NKqb5mL0t7X5wrUTg=
+
+flatted@^3.1.0:
+  version "3.2.5"
+  resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.2.5.tgz#76c8584f4fc843db64702a6bd04ab7a8bd666da3"
+  integrity sha512-WIWGi2L3DyTUvUrwRKgGi9TwxQMUEqPOPQBVi71R96jZXJdFskXEmf54BoZaS1kknGODoIGASGEzBUYdyMCBJg==
 
 flush-write-stream@^1.0.0:
   version "1.1.1"
@@ -7530,6 +7565,13 @@ rimraf@^2.5.4, rimraf@^2.6.1, rimraf@^2.6.3:
   dependencies:
     glob "^7.1.3"
 
+rimraf@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-3.0.2.tgz#f1a5402ba6220ad52cc1282bac1ae3aa49fd061a"
+  integrity sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==
+  dependencies:
+    glob "^7.1.3"
+
 ripemd160@^2.0.0, ripemd160@^2.0.1:
   version "2.0.2"
   resolved "https://registry.npmmirror.com/ripemd160/download/ripemd160-2.0.2.tgz#a1c1a6f624751577ba5d07914cbc92850585890c"
@@ -8794,6 +8836,13 @@ vue-loader@^15.9.2:
     loader-utils "^1.1.0"
     vue-hot-reload-api "^2.3.0"
     vue-style-loader "^4.1.0"
+
+vue-native-websocket-vue3@^3.1.4:
+  version "3.1.4"
+  resolved "https://registry.yarnpkg.com/vue-native-websocket-vue3/-/vue-native-websocket-vue3-3.1.4.tgz#84431734e3f1e656589dd35220928f1c735e5e05"
+  integrity sha512-Dqq+LaoV1ZgWhPGIEBKBIXMc+n+7Bh6BkAgnRrf3iV6NSOA7q42dQNOEPbJCzmn/L779ck56RT1UtoCZfIwq/w==
+  dependencies:
+    file-entry-cache "^6.0.1"
 
 vue-style-loader@^4.1.0, vue-style-loader@^4.1.2:
   version "4.1.3"

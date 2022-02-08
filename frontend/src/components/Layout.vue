@@ -106,5 +106,6 @@ export default defineComponent({
 .layout-content.p-tabview > .p-tabview-panels {
   height: 100vh;
   background-color: #efefef;
+  overflow: scroll;
 }
 </style>

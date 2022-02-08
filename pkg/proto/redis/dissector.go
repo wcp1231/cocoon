@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"cocoon/pkg/model/common"
 	"fmt"
-	"time"
 )
 
 type Dissector struct {
@@ -42,7 +41,7 @@ func (d *Dissector) StartResponseDissect(reader *bufio.Reader) {
 }
 
 func (d *Dissector) dissectRequest() error {
-	message := &common.GenericMessage{}
+	message := common.NewRedisGenericMessage()
 
 	object, err := d.reqReader.ReadObject()
 	if err != nil {
@@ -52,20 +51,19 @@ func (d *Dissector) dissectRequest() error {
 	}
 
 	request := object.GetRequest()
-	message.CaptureTime = time.Now()
-	message.Header = map[string]string{}
-	message.Header["CMD"] = request.Cmd
-	message.Header["KEY"] = request.Key
+	message.Meta["CMD"] = request.Cmd
+	message.Meta["KEY"] = request.Key
 	body := object.Pretty()
 	message.Body = &body
 	message.Raw = &request.Raw
 
+	message.CaptureNow()
 	d.requestC <- message
 	return nil
 }
 
 func (d *Dissector) dissectResponse() error {
-	message := &common.GenericMessage{}
+	message := common.NewRedisGenericMessage()
 
 	object, err := d.respReader.ReadObject()
 	if err != nil {
@@ -74,10 +72,10 @@ func (d *Dissector) dissectResponse() error {
 		return err
 	}
 
-	message.CaptureTime = time.Now()
 	body := object.Pretty()
 	message.Body = &body
 	message.Raw = &object.Raw
+	message.CaptureNow()
 	d.responseC <- message
 	return nil
 }

@@ -2,10 +2,8 @@ package agent
 
 import (
 	"cocoon/pkg/model/common"
-	"cocoon/pkg/model/rpc"
 	"cocoon/pkg/proto"
 	"context"
-	"github.com/smallnest/rpcx/client"
 	"go.uber.org/zap"
 )
 
@@ -55,6 +53,7 @@ func (c *requestResponseHandler) handleRequest() {
 			if !more {
 				return
 			}
+			request.Id = c.server.nextId()
 			c.server.logger.Debug("Conn request",
 				zap.String("src", c.inboundConn.addr),
 				zap.String("dst", c.outboundConn.addr),
@@ -70,61 +69,29 @@ func (c *requestResponseHandler) handleRequest() {
 	}
 }
 
-// 由 agent 进行 mock
+// tryToMock 由 agent 进行 mock
+// 根据协议和 agent 配置判断是否进行 mock
 func (c *requestResponseHandler) tryToMock(request *common.GenericMessage) error {
+	// record request
+	c.server.recordServer.RecordRequest(request)
+
 	if c.proto.Mock /* TODO && agent mock mode */ {
-		return c.handleMock(request)
+		return c.requestMockServer(request)
 	}
 
-	// record mode
 	return c.sendRequestToOriginAndWait(request)
 }
 
-func (c *requestResponseHandler) tryToRecord(request, response *common.GenericMessage) error {
-	//rpcReq := &rpc.RecordReq{
-	//	Session:    c.server.session,
-	//	IsOutgoing: true, // TODO
-	//	Proto:      c.proto,
-	//	ReqHeader:  request.Header,
-	//	RespHeader: response.Header,
-	//	ReqBody:    request.Body,
-	//	RespBody:   response.Body,
-	//}
-	//c.server.rpcClient.RecordRequestResponse(c.ctx, rpcReq)
-	return c.responseToInbound(response.Raw)
-}
-
-func (c *requestResponseHandler) handleMock(request *common.GenericMessage) error {
+// requestMockServer 获取 mock 结果
+func (c *requestResponseHandler) requestMockServer(request *common.GenericMessage) error {
 	result := c.server.mockServer.Mock(c.proto.Name, request)
 
 	if result.Pass {
 		c.server.logger.Debug("Send request to origin")
 		return c.sendRequestToOriginAndWait(request)
-
 	}
 
-	return c.responseToInbound(result.Data)
-}
-
-func (c *requestResponseHandler) handleMockResponse(call *client.Call, request *common.GenericMessage) error {
-	<-call.Done
-	resp := call.Reply.(*rpc.OutboundResp)
-
-	if resp.OpType == rpc.OP_MOCK {
-		return c.responseToInbound(resp.Data)
-	}
-
-	c.server.logger.Debug("Send request to origin")
-	return c.sendRequestToOriginAndWait(request)
-}
-
-func (c *requestResponseHandler) responseToInbound(data *[]byte) error {
-	_, err := c.inboundConn.c.Write(*data)
-	if err != nil {
-		c.server.logger.Debug("Write back failed", zap.Error(err))
-		return err
-	}
-	return nil
+	return c.handleResponse(request, result.Data)
 }
 
 // sendRequestToOriginAndWait 处理 request-response 类型的情况
@@ -140,14 +107,27 @@ func (c *requestResponseHandler) sendRequestToOriginAndWait(request *common.Gene
 	if !more {
 		return nil
 	}
-	c.server.logger.Debug("Conn response",
-		zap.String("src", c.inboundConn.addr),
-		zap.String("dst", c.outboundConn.addr),
-		zap.String("resp", response.String()))
-
-	err = c.tryToRecord(request, response)
+	err = c.handleResponse(request, response)
 	if err != nil {
 		c.server.logger.Debug("Call record server failed", zap.Error(err))
 	}
 	return err
+}
+
+// handleResponse 处理 response
+// 无论是 mock 还是真实数据
+// 主要功能暂时只有记录
+func (c *requestResponseHandler) handleResponse(request, response *common.GenericMessage) error {
+	// record response
+	c.server.recordServer.RecordResponse(request, response)
+	return c.sendResponseToInbound(response.Raw)
+}
+
+func (c *requestResponseHandler) sendResponseToInbound(data *[]byte) error {
+	_, err := c.inboundConn.c.Write(*data)
+	if err != nil {
+		c.server.logger.Debug("Write back failed", zap.Error(err))
+		return err
+	}
+	return nil
 }

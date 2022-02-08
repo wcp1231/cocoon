@@ -3,11 +3,13 @@ package agent
 import (
 	"cocoon/pkg/mock"
 	"cocoon/pkg/proto"
+	"cocoon/pkg/record"
 	"context"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 	"net"
 	"net/http"
+	"sync/atomic"
 )
 
 type AgentProxy interface {
@@ -18,13 +20,16 @@ type AgentProxy interface {
 }
 
 type Agent struct {
-	ctx        context.Context
-	logger     *zap.Logger
-	appname    string
-	session    string
-	proxy      AgentProxy
-	httpServer *http.Server
-	mockServer *mock.MockService
+	ctx          context.Context
+	logger       *zap.Logger
+	appname      string
+	session      string
+	proxy        AgentProxy
+	httpServer   *http.Server
+	mockServer   *mock.MockService
+	recordServer *record.RecordService
+
+	id int32
 }
 
 func NewAgent(ctx context.Context, logger *zap.Logger, appname, session string) *Agent {
@@ -45,6 +50,7 @@ func (s *Agent) Init(proxyListen, httpListen string, transparent bool, protocols
 	proto.InitPresetClassifier(protocols)
 
 	s.mockServer = mock.NewMockService(s.logger)
+	s.recordServer = record.NewRecordService(s.logger)
 	s.initHttp(httpListen)
 
 	return s.mockServer.InitFromFile()
@@ -73,13 +79,16 @@ func (s *Agent) initHttp(listen string) {
 	router.HandleFunc("/api/mocks/{id}", s.mockServer.EditMocks).Methods("POST")
 	router.HandleFunc("/api/mocks/{id}", s.mockServer.DeleteMocks).Methods("DELETE")
 
+	router.HandleFunc("/api/ws", s.recordServer.ServeWs)
+
 	s.httpServer = &http.Server{
-		Addr: listen,
+		Addr:    listen,
 		Handler: router,
 	}
 }
 
 func (s *Agent) Start() {
+	go s.recordServer.Start()
 	go func() {
 		s.logger.Info("Listen http at",
 			zap.String("listen", s.httpServer.Addr))
@@ -94,6 +103,10 @@ func (s *Agent) Start() {
 			s.logger.Fatal("Listen proxy failed", zap.Error(err))
 		}
 	}()
+}
+
+func (s *Agent) nextId() int32 {
+	return atomic.AddInt32(&s.id, 1)
 }
 
 func (s *Agent) HandleConn(ctx context.Context, inboundConn, outboundConn *net.TCPConn) {

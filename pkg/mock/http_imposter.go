@@ -75,21 +75,21 @@ func newFieldMatcher(field *fieldMockConfig) FieldMatcher {
 
 func (h *HttpRequestMatcher) Match(req *common.GenericMessage) bool {
 	if h.method != nil {
-		method := req.Header["METHOD"]
+		method := req.Meta["METHOD"]
 		if !h.method.Match(method) {
 			return false
 		}
 	}
 
 	if h.host != nil {
-		host := req.Header["HOST"]
+		host := req.Meta["HOST"]
 		if !h.host.Match(host) {
 			return false
 		}
 	}
 
 	if h.url != nil {
-		url := req.Header["URL"]
+		url := req.Meta["URL"]
 		if !h.url.Match(url) {
 			return false
 		}
@@ -105,25 +105,30 @@ func (h *HttpRequestMatcher) Match(req *common.GenericMessage) bool {
 	return true
 }
 
-func (h *HttpRequestMatcher) Data() *[]byte {
+func (h *HttpRequestMatcher) Data() *common.GenericMessage {
 	response := http.Response{}
 	response.StatusCode, _ = strconv.Atoi(h.status)
 	response.Header = http.Header{}
 	response.ProtoMajor = 1
 	response.ProtoMinor = 1
 
-	message := &common.GenericMessage{}
-	message.Header = map[string]string{}
+	message := common.NewHTTPGenericMessage()
+	message.Meta["STATUS"] = h.status
 	for k, v := range h.respHeader {
+		message.Header[k] = v
 		response.Header[k] = strings.Split(v, ";;")
 	}
-	bodyBuf := bytes.NewBufferString(h.respBody)
+	body := []byte(h.respBody)
+	message.Body = &body
+
+	bodyBuf := bytes.NewBuffer(body)
 	response.ContentLength = int64(bodyBuf.Len())
 	response.Body = io.NopCloser(bodyBuf)
 	buf := new(bytes.Buffer)
 	_ = response.Write(buf)
 	bs := buf.Bytes()
-	return &bs
+	message.Raw = &bs
+	return message
 }
 
 func (h *HttpRequestMatcher) ID() int32 {

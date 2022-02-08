@@ -7,7 +7,6 @@ import (
 	"fmt"
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"io"
-	"time"
 )
 
 func ReadPacket(reader *bufio.Reader) (*common.GenericMessage, error) {
@@ -35,14 +34,11 @@ func ReadPacket(reader *bufio.Reader) (*common.GenericMessage, error) {
 	copy(raw, headerBytes)
 	copy(raw[len(headerBytes):], body)
 
-	message := &common.GenericMessage{}
-	message.CaptureTime = time.Now()
+	message := common.NewDubboGenericMessage()
 	message.Body = &body // FIXME
 	message.Raw = &raw
 	return message, nil
 }
-
-
 
 func ReadHeader(reader *bufio.Reader) (*dubboHeader, error) {
 	header := &dubboHeader{}

@@ -2,7 +2,6 @@ package mock
 
 import (
 	"cocoon/pkg/model/common"
-	"fmt"
 	"testing"
 )
 
@@ -37,6 +36,4 @@ func TestRequestImporter_Match(t *testing.T) {
 	if !matcher.Match(req) {
 		t.Fatal("HttpRequestMatcher failed")
 	}
-	data := matcher.Data()
-	fmt.Println(string(*data))
 }

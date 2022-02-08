@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 )
 
 type Dissector struct {
@@ -51,7 +50,7 @@ func (d *Dissector) StartResponseDissect(reader *bufio.Reader) {
 }
 
 func (d *Dissector) dissectRequest() error {
-	message := &common.GenericMessage{}
+	message := common.NewHTTPGenericMessage()
 
 	request, err := http.ReadRequest(d.reqReader)
 	if err != nil {
@@ -64,15 +63,13 @@ func (d *Dissector) dissectRequest() error {
 		// TODO response 500?
 	}
 
-	message.CaptureTime = time.Now()
-	message.Header = map[string]string{}
 	for k, vv := range request.Header {
 		message.Header[k] = strings.Join(vv, ";")
 	}
 
-	message.Header["HOST"] = request.Host
-	message.Header["METHOD"] = request.Method
-	message.Header["URL"] = request.URL.String()
+	message.Meta["HOST"] = request.Host
+	message.Meta["METHOD"] = request.Method
+	message.Meta["URL"] = request.URL.String()
 
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
@@ -89,12 +86,13 @@ func (d *Dissector) dissectRequest() error {
 	bs := buf.Bytes()
 	message.Raw = &bs
 
+	message.CaptureNow()
 	d.requestC <- message
 	return nil
 }
 
 func (d *Dissector) dissectResponse() error {
-	message := &common.GenericMessage{}
+	message := common.NewHTTPGenericMessage()
 
 	response, err := http.ReadResponse(d.respReader, nil)
 	if err != nil {
@@ -107,14 +105,12 @@ func (d *Dissector) dissectResponse() error {
 		// TODO response 500?
 	}
 
-	message.CaptureTime = time.Now()
-	message.Header = map[string]string{}
 	for k, vv := range response.Header {
 		message.Header[k] = strings.Join(vv, ";;")
 	}
 
-	message.Header["STATUS"] = response.Status
-	message.Header["PROTO"] = response.Proto
+	message.Meta["STATUS"] = response.Status
+	message.Meta["PROTO"] = response.Proto
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -131,6 +127,7 @@ func (d *Dissector) dissectResponse() error {
 	}
 	message.Raw = &bs
 
+	message.CaptureNow()
 	d.responseC <- message
 	return nil
 }
