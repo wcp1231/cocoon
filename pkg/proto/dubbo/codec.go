@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"cocoon/pkg/model/common"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"io"
@@ -21,12 +22,25 @@ func ReadPacket(reader *bufio.Reader) (*common.GenericMessage, error) {
 		return nil, err
 	}
 
-	if header.isRequest() {
+	message := common.NewDubboGenericMessage()
+	if header.isHeartbeat() {
+		message.Meta["HEARTBEAT"] = "true"
+	} else if header.isRequest() {
 		request, err := readRequestBody(header, body)
 		fmt.Printf("Dubbo body decode. err=%v, request=%+v\n", err, request)
+		message.Header["dubboVersion"] = request.dubboVersion
+		message.Header["serviceVersion"] = request.serviceVersion
+		message.Header["method"] = request.method
+		message.Header["target"] = request.target
+		message.Header["args"] = formatAttachments(request.args)
+		message.Header["attachments"] = formatAttachments(request.attachments)
 	} else {
 		response, err := readResponseBody(header, body)
 		fmt.Printf("Dubbo body decode. err=%v, response=%+v\n", err, response)
+		message.Header["dubboVersion"] = response.dubboVersion
+		message.Header["exception"] = response.exception
+		message.Header["respObj"] = fmt.Sprintf("%v", response.respObj)
+		message.Header["attachments"] = formatAttachments(response.attachments)
 	}
 
 	headerBytes := EncodeHeader(header)
@@ -34,10 +48,6 @@ func ReadPacket(reader *bufio.Reader) (*common.GenericMessage, error) {
 	copy(raw, headerBytes)
 	copy(raw[len(headerBytes):], body)
 
-	message := common.NewDubboGenericMessage()
-	if header.isHeartbeat() {
-		message.Meta["HEARTBEAT"] = "true"
-	}
 	message.Body = &body // FIXME
 	message.Raw = &raw
 	return message, nil
@@ -261,4 +271,14 @@ func readAttachments(decoder *hessian.Decoder) (map[string]interface{}, error) {
 		}
 	}
 	return result, nil
+}
+
+func formatAttachments(attachments map[string]interface{}) string {
+	result := map[string]string{}
+	for k, v := range attachments {
+		result[k] = fmt.Sprintf("%v", v)
+	}
+
+	str, _ := json.Marshal(result)
+	return string(str)
 }

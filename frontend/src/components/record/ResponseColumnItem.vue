@@ -53,6 +53,17 @@ export default defineComponent({
         }
         return "OK";
       });
+    } else if (props.protocol === 'Mongo') {
+      status = computed(() => {
+        let status = "PENDING";
+        if (!props.response) {
+          return status;
+        }
+        if (!props.response.body) {
+          return status;
+        }
+        return "OK";
+      });
     }
     return () => (
         <div><span>{ status.value }</span></div>

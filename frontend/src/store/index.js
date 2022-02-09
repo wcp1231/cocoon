@@ -61,11 +61,20 @@ export default createStore({
       console.log("On message.")
       console.log(message)
       state.socket.message = message;
-      let record = JSON.parse(message.data)
-      if (record.isRequest) {
-        this.commit("on_request_records", record);
-      } else {
-        this.commit("on_response_records", record);
+      let lines = message.data.split('\n')
+      for (let idx in lines) {
+        let line = lines[idx];
+        if (!line) continue;
+        try {
+          let record = JSON.parse(line)
+          if (record.isRequest) {
+            this.commit("on_request_records", record);
+          } else {
+            this.commit("on_response_records", record);
+          }
+        } catch (e) {
+          console.log('parse json error', e)
+        }
       }
     },
     // 自动重连
@@ -89,8 +98,10 @@ export default createStore({
     },
     on_response_records(state, response) {
       let record = state.recordMap.get(response.id);
-      record.response = response;
-      record.timespan = response.captureTime - record.request.captureTime;
+      if (record) {
+        record.response = response;
+        record.timespan = response.captureTime - record.request.captureTime;
+      }
     },
     update_mocks(state, mocks) {
       state.mocks = mocks;

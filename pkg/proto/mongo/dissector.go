@@ -62,6 +62,7 @@ func (d *Dissector) dissectRequest() error {
 	raw := buf.Bytes()
 	message.Raw = &raw
 
+	message.CaptureNow()
 	d.requestC <- message
 	return nil
 }
@@ -81,6 +82,7 @@ func (d *Dissector) dissectResponse() error {
 
 	raw := buf.Bytes()
 	message.Raw = &raw
+	message.CaptureNow()
 	d.responseC <- message
 	return nil
 }

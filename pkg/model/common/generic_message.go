@@ -27,6 +27,10 @@ func NewRedisGenericMessage() *GenericMessage {
 	return NewGenericMessage(PROTOCOL_REDIS.Name)
 }
 
+func NewMongoGenericMessage() *GenericMessage {
+	return NewGenericMessage(PROTOCOL_MONGO.Name)
+}
+
 func NewGenericMessage(protocol string) *GenericMessage {
 	message := &GenericMessage{
 		Meta:   map[string]string{},

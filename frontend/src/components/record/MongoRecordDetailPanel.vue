@@ -1,26 +1,31 @@
 <template>
   <Accordion :multiple="true" :activeIndex="[0]">
     <AccordionTab header="Request">
-      <div v-if="request.meta['HEARTBEAT']">Heartbeat</div>
-      <div v-else class="header-panel">
+      <div class="header-panel">
         <div v-for="(v, k) in request.header" v-bind:key="k">
           <span class="header-key">{{ k }}: </span>
           <span class="header-val overflow-wrap-item">{{ v }}</span>
         </div>
       </div>
-<!--      <div>-->
-<!--        {{ request.body }}-->
-<!--      </div>-->
+      <template v-if="request.body">
+        <Divider type="dashed">
+          <b>Request Body</b>
+        </Divider>
+        <div>
+          {{ request.body }}
+        </div>
+      </template>
     </AccordionTab>
     <AccordionTab header="Response">
-      <div v-if="response.meta['HEARTBEAT']">Heartbeat</div>
-      <div v-else class="header-panel">
+      <div class="header-panel">
         <div v-for="(v, k) in response.header" v-bind:key="k">
           <span class="header-key">{{ k }}: </span>
           <span class="header-val overflow-wrap-item">{{ v }}</span>
         </div>
       </div>
-<!--      <span class="overflow-wrap-item">{{ response.body }}</span>-->
+    </AccordionTab>
+    <AccordionTab header="Response Body" v-if="response.body">
+      <span class="overflow-wrap-item">{{ response.body }}</span>
     </AccordionTab>
   </Accordion>
 </template>
@@ -29,9 +34,10 @@
 import { defineComponent } from "vue";
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
+import Divider from "primevue/divider";
 
 export default defineComponent({
-  name: "DubboRecordDetailPanel",
+  name: "MongoRecordDetailPanel",
   props: {
     record: Object
   },
@@ -51,6 +57,7 @@ export default defineComponent({
   components: {
     Accordion,
     AccordionTab,
+    Divider,
   },
 });
 </script>
