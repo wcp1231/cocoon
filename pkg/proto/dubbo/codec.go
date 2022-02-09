@@ -35,6 +35,9 @@ func ReadPacket(reader *bufio.Reader) (*common.GenericMessage, error) {
 	copy(raw[len(headerBytes):], body)
 
 	message := common.NewDubboGenericMessage()
+	if header.isHeartbeat() {
+		message.Meta["HEARTBEAT"] = "true"
+	}
 	message.Body = &body // FIXME
 	message.Raw = &raw
 	return message, nil
@@ -96,13 +99,13 @@ func ReadHeader(reader *bufio.Reader) (*dubboHeader, error) {
 func EncodeHeader(header *dubboHeader) []byte {
 	bs := make([]byte, 0)
 	switch {
-	case header.Type&PackageHeartbeat != 0x00:
+	case header.isHeartbeat():
 		if header.ResponseStatus == Zero {
 			bs = append(bs, DubboRequestHeartbeatHeader[:]...)
 		} else {
 			bs = append(bs, DubboResponseHeartbeatHeader[:]...)
 		}
-	case header.Type&PackageResponse != 0x00:
+	case header.isResponse():
 		bs = append(bs, DubboResponseHeaderBytes[:]...)
 		if header.ResponseStatus != 0 {
 			bs[3] = header.ResponseStatus

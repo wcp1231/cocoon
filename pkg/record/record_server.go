@@ -45,8 +45,6 @@ func (r *RecordService) RecordResponse(request, response *common.GenericMessage)
 		return err
 	}
 	r.broadcast(data)
-	dur := response.CaptureTime.Sub(request.CaptureTime)
-	r.logger.Info("Record response", zap.String("span", dur.String()))
 	return nil
 }
 

@@ -37,7 +37,7 @@
         </div>
       </div>
     </AccordionTab>
-    <AccordionTab header="Response Body">
+    <AccordionTab header="Response Body" v-if="response.body">
       <span class="overflow-wrap-item">{{ response.body }}</span>
     </AccordionTab>
   </Accordion>

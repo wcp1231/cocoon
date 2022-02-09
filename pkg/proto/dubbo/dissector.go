@@ -56,6 +56,14 @@ func (d *dubboHeader) isRequest() bool {
 	return d.Type&PackageRequest != 0x00
 }
 
+func (d *dubboHeader) isResponse() bool {
+	return d.Type&PackageResponse != 0x00
+}
+
+func (d *dubboHeader) isHeartbeat() bool {
+	return d.Type&PackageHeartbeat != 0x00
+}
+
 func (d *dubboHeader) hasException() bool {
 	return d.Type&PackageResponse_Exception != 0x00
 }
