@@ -16,8 +16,8 @@
                      scrollHeight="800px"
                      class="record-table">
             <Column :expander="true" headerStyle="flex: 0 0 45px;" bodyStyle="flex: 0 0 45px;" headerClass="expander-column" bodyClass="expander-column"/>
-            <Column field="id" header="ID" headerStyle="flex: 0 0 80px;" bodyStyle="flex: 0 0 80px;"></Column>
-            <Column field="protocol" header="Proto" filterField="protocol" headerStyle="flex: 0 0 90px;" bodyStyle="flex: 0 0 90px;">
+            <Column field="id" header="ID" headerStyle="flex: 0 0 60px;" bodyStyle="flex: 0 0 60px;"></Column>
+            <Column field="protocol" header="Proto" filterField="protocol" headerStyle="flex: 0 0 80px;" bodyStyle="flex: 0 0 80px;">
               <template #body="slotProps">
                 <tag :class="`protocol-tag protocol-${slotProps.data.protocol}-tag`">{{ slotProps.data.protocol }}</tag>
               </template>
@@ -148,5 +148,11 @@ export default defineComponent({
 }
 .row-expansion-panel .p-accordion.p-component a.p-accordion-header-link {
   padding: 8px 10px;
+}
+.record-table.p-datatable .p-datatable-thead > tr > th {
+  padding: 0.5rem 0;
+}
+.record-table.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.5rem 0;
 }
 </style>

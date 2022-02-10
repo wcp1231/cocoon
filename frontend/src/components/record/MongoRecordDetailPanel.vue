@@ -2,6 +2,15 @@
   <Accordion :multiple="true" :activeIndex="[0]">
     <AccordionTab header="Request">
       <div class="header-panel">
+        <div v-for="(v, k) in request.meta" v-bind:key="k">
+          <span class="header-key">{{ k }}: </span>
+          <span class="header-val overflow-wrap-item">{{ v }}</span>
+        </div>
+      </div>
+      <Divider type="dashed">
+        <b>Query</b>
+      </Divider>
+      <div class="header-panel">
         <div v-for="(v, k) in request.header" v-bind:key="k">
           <span class="header-key">{{ k }}: </span>
           <span class="header-val overflow-wrap-item">{{ v }}</span>
@@ -18,7 +27,7 @@
     </AccordionTab>
     <AccordionTab header="Response">
       <div class="header-panel">
-        <div v-for="(v, k) in response.header" v-bind:key="k">
+        <div v-for="(v, k) in response.meta" v-bind:key="k">
           <span class="header-key">{{ k }}: </span>
           <span class="header-val overflow-wrap-item">{{ v }}</span>
         </div>

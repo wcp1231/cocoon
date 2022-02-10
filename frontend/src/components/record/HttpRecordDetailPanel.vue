@@ -1,14 +1,12 @@
 <template>
   <Accordion :multiple="true" :activeIndex="[0, 1]">
     <AccordionTab header="Request">
-      <div>
-        <div class="header-panel">
-          <div>
-            <span class="header-key">Method: </span><span class="header-val">{{ request.meta["METHOD"] }}</span>
-          </div>
-          <div>
-            <span class="header-key">URL: </span><span class="header-val overflow-wrap-item">{{ request.meta['HOST'] + request.meta['URL'] }}</span>
-          </div>
+      <div class="header-panel">
+        <div>
+          <span class="header-key">Method: </span><span class="header-val">{{ request.meta["METHOD"] }}</span>
+        </div>
+        <div>
+          <span class="header-key">URL: </span><span class="header-val overflow-wrap-item">{{ request.meta['HOST'] + request.meta['URL'] }}</span>
         </div>
       </div>
       <Divider type="dashed">
@@ -30,6 +28,14 @@
       </template>
     </AccordionTab>
     <AccordionTab header="Response Header">
+      <div class="header-panel">
+        <div>
+          <span class="header-key">Status: </span><span class="header-val">{{ response.meta["STATUS"] }}</span>
+        </div>
+      </div>
+      <Divider type="dashed">
+        <b>Response Header</b>
+      </Divider>
       <div class="header-panel">
         <div v-for="(v, k) in response.header" v-bind:key="k">
           <span class="header-key">{{ k }}: </span>

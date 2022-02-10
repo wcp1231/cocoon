@@ -16,8 +16,8 @@
       </template>
     </template>
     <template v-else-if="protocol === 'Mongo'">
-      <span class="request-column-tag">{{ request.header["op_type"] }}</span>
-      <span class="request-column-info">{{ `${request.header['collection']} ${request.header["query"]}` }}</span>
+      <span class="request-column-tag">{{ request.meta["OP_TYPE"] }}</span>
+      <span class="request-column-info">{{ `${request.meta["COLLECTION"]} ${request.meta["QUERY"]}` }}</span>
     </template>
     <template v-else>
       {{ request }}
