@@ -74,7 +74,8 @@ func (h *RedisRequestMatcher) Match(req *common.GenericMessage) bool {
 }
 
 func (h *RedisRequestMatcher) Data() *common.GenericMessage {
-	message := &common.GenericMessage{}
+	message := common.NewRedisGenericMessage()
+	message.Meta["MOCK"] = "true"
 	message.Body = &h.respBody
 	message.Raw = &h.respBody
 	return message

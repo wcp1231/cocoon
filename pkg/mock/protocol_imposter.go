@@ -28,6 +28,7 @@ func (i *ProtocolImposter) Mock(msg *common.GenericMessage) *common.MockResult {
 		if imposter.Match(msg) {
 			result.Pass = false
 			result.Data = imposter.Data()
+			result.Data.CaptureNow()
 			break
 		}
 	}

@@ -113,6 +113,7 @@ func (h *HttpRequestMatcher) Data() *common.GenericMessage {
 	response.ProtoMinor = 1
 
 	message := common.NewHTTPGenericMessage()
+	message.Meta["MOCK"] = "true"
 	message.Meta["STATUS"] = h.status
 	for k, v := range h.respHeader {
 		message.Header[k] = v

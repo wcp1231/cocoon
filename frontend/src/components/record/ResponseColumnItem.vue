@@ -11,6 +11,7 @@
 
 <script lang="jsx">
 import { defineComponent, computed } from "vue";
+import Tag from "primevue/tag";
 
 export default defineComponent({
   name: "ResponseColumnItem",
@@ -20,55 +21,58 @@ export default defineComponent({
   },
   setup(props) {
     let status = computed(() => "UNKNOWN")
+    const getValueFromMeta = (data, key) => {
+      if (!data) {
+        return null;
+      }
+      if (!data.meta) {
+        return null;
+      }
+      return data.meta[key];
+    };
+    const checkResponse = (resp, key) => {
+      if (!resp) {
+        return false;
+      }
+      if (!resp[key]) {
+        return false;
+      }
+      return true;
+    }
+    let mock = getValueFromMeta(props.response, "MOCK");
+
     if (props.protocol === 'HTTP') {
       status = computed(() => {
-        let status = "PENDING";
-        if (!props.response) {
-          return status;
-        }
-        if (!props.response.meta) {
-          return status;
-        }
-        return props.response.meta["STATUS"] || status;
+        return getValueFromMeta(props.response, "STATUS") || "PENDING";
       });
     } else if (props.protocol === 'Redis') {
       status = computed(() => {
-        let status = "PENDING";
-        if (!props.response) {
-          return status;
-        }
-        if (!props.response.meta) {
-          return status;
-        }
-        return "OK";
+        let ok = checkResponse(props.response, "meta");
+        return ok ? "OK" : "PENDING";
       });
     } else if (props.protocol === 'Dubbo') {
       status = computed(() => {
-        let status = "PENDING";
-        if (!props.response) {
-          return status;
-        }
-        if (!props.response.body) {
-          return status;
-        }
-        return "OK";
+        let ok = checkResponse(props.response, "body");
+        return ok ? "OK" : "PENDING";
       });
     } else if (props.protocol === 'Mongo') {
       status = computed(() => {
-        let status = "PENDING";
-        if (!props.response) {
-          return status;
-        }
-        if (!props.response.body) {
-          return status;
-        }
-        return "OK";
+        let ok = checkResponse(props.response, "body");
+        return ok ? "OK": "PENDING";
       });
     }
+    if (mock) {
+      return () => (
+          <div><span class="response-status-tag">{ status.value }</span><Tag severity="info">MOCK</Tag></div>
+      )
+    }
     return () => (
-        <div><span>{ status.value }</span></div>
+        <div><span class="response-status-tag">{ status.value }</span></div>
     );
   },
+  components: {
+    Tag,
+  }
 });
 </script>
 
@@ -103,5 +107,14 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.response-status-tag {
+  margin-right:1rem;
 
+  color: #000000;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.4rem;
+  border: solid 1px black;
+  border-radius: 4px;
+}
 </style>
