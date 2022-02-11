@@ -31,6 +31,10 @@ func NewMongoGenericMessage() *GenericMessage {
 	return NewGenericMessage(PROTOCOL_MONGO.Name)
 }
 
+func NewMysqlGenericMessage() *GenericMessage {
+	return NewGenericMessage(PROTOCOL_MYSQL.Name)
+}
+
 func NewGenericMessage(protocol string) *GenericMessage {
 	message := &GenericMessage{
 		Meta:   map[string]string{},

@@ -6,6 +6,7 @@ import (
 	"cocoon/pkg/proto/dubbo"
 	"cocoon/pkg/proto/http"
 	"cocoon/pkg/proto/mongo"
+	"cocoon/pkg/proto/mysql"
 	"cocoon/pkg/proto/redis"
 )
 
@@ -21,4 +22,8 @@ func NewRequestDissector(protocol *common.Protocol, reqC, respC chan *common.Gen
 		return dubbo.NewRequestDissector(reqC, respC)
 	}
 	return nil
+}
+
+func NewMysqlDissector(reqC, respC chan *common.GenericMessage) *mysql.Dissector {
+	return mysql.NewRequestDissector(reqC, respC)
 }

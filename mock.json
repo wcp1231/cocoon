@@ -11,6 +11,19 @@
         },
         "body": "{\"errorCode\":0,\"text\":\"\",\"data\":[{\"id\":\"1\",\"password\":\"123\",\"business\":[]}],\"now\":\"2022-01-27T07:45:55.964Z\",\"version\":\"1.0.0\",\"ok\":true}"
       }
+    },
+    {
+      "request": {
+        "url": { "equals": "/services/config?appId=account&ip=10.2.74.96" }
+      },
+      "response": {
+        "status": "200",
+        "header": {
+          "Cache-Control": "no-cache, no-store, max-age=0, must-revalidate",
+          "Content-Type": "application/json;charset=UTF-8"
+        },
+        "body": "[{\"appName\":\"APOLLO-CONFIGSERVICE\",\"instanceId\":\"bj-dev-apollo-01.dev.keep:apollo-configservice:8091\",\"homepageUrl\":\"http://172.16.1.47:8091/\"}]"
+      }
     }
   ],
   "redis": [
