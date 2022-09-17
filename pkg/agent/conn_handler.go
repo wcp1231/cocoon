@@ -78,6 +78,11 @@ func (c *ConnHandler) startProxy() {
 		proxy.start()
 		return
 	}
+	if c.proto == common.PROTOCOL_MYSQL {
+		proxy := newMysqlHandler(c.ctx, c.server, c.inboundConn, c.outboundConn)
+		proxy.start()
+		return
+	}
 	proxy := newRequestResponseHandler(c.ctx, c.server, c.proto, c.inboundConn, c.outboundConn)
 	proxy.start()
 }
