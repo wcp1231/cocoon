@@ -33,7 +33,6 @@ type SimpleRows struct {
 	InsertID     uint64
 	buffer       *Buffer
 	Fields       []*Field
-	raw          []byte
 }
 
 // Next implements the Rows interface.
@@ -59,7 +58,6 @@ func (r *SimpleRows) Next() bool {
 		return false
 	}
 	r.data = pkt.Datas
-	r.raw = append(r.raw, pkt.Raw()...)
 
 	switch r.data[0] {
 	case EOF_PACKET:
@@ -89,10 +87,6 @@ func (r *SimpleRows) RowValues() ([]byte, error) {
 	return data, nil
 }
 
-func (r *SimpleRows) Raw() []byte {
-	return r.raw
-}
-
 // Rows presents row cursor interface.
 type Rows interface {
 	Next() bool
@@ -117,7 +111,6 @@ type BaseRows struct {
 	InsertID     uint64
 	buffer       *Buffer
 	Fields       []*Field
-	raw          []byte
 }
 
 // TextRows presents row tuple.
@@ -153,7 +146,6 @@ func (r *BaseRows) Next() bool {
 		return false
 	}
 	r.data = pkt.Datas
-	r.raw = append(r.raw, pkt.Raw()...)
 
 	switch r.data[0] {
 	case EOF_PACKET:
@@ -171,10 +163,6 @@ func (r *BaseRows) Next() bool {
 	}
 	r.buffer.Reset(r.data)
 	return true
-}
-
-func (r *BaseRows) Raw() []byte {
-	return r.raw
 }
 
 // Close drain the rest packets and check the error.

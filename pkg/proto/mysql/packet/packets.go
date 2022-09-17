@@ -23,9 +23,7 @@ func NewPacket() *Packet {
 }
 
 func (p *Packet) Raw() []byte {
-	raw := ToPacketBytes(p.Datas)
-	raw[3] = p.SequenceID
-	return raw
+	return ToPacketBytesWithSequenceID(p.Datas, p.SequenceID)
 }
 
 // ToPacketBytes 将一段 payload 数据转化为 Packet 数据
@@ -37,6 +35,12 @@ func ToPacketBytes(payload []byte) []byte {
 	raw[2] = byte(l >> 16)
 	raw[3] = 1
 	copy(raw[4:], payload)
+	return raw
+}
+
+func ToPacketBytesWithSequenceID(payload []byte, sequenceID uint8) []byte {
+	raw := ToPacketBytes(payload)
+	raw[3] = sequenceID
 	return raw
 }
 

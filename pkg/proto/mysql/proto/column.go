@@ -14,6 +14,12 @@ func ColumnCount(payload []byte) (count uint64, err error) {
 	return
 }
 
+func PackColumnCount(count uint64) []byte {
+	buf := NewBuffer(8)
+	buf.WriteLenEncode(count)
+	return buf.Datas()
+}
+
 // UnpackColumn used to unpack the column packet.
 // http://dev.mysql.com/doc/internals/en/com-query-response.html#packet-Protocol::ColumnDefinition41
 func UnpackColumn(payload []byte) (*Field, error) {
