@@ -14,6 +14,9 @@ type queryResponse struct {
 	// ERR_PACKET
 	error *proto.ERR
 
+	// STMT_PREPARE_OK
+	stmtPrepareOk *proto.StmtPrepareOK
+
 	// RESULT_SET
 	resultSet *proto.ResultSet
 	reqCmd    string
@@ -42,7 +45,12 @@ func (d *Dissector) readResponse() (*common.GenericMessage, error) {
 		// TODO 返回给客户端？
 		return message, nil
 	}
-	// 非 ResultSet
+	if resp.stmtPrepareOk != nil {
+		spbytes := proto.PackStmtPrepareOk(resp.stmtPrepareOk)
+		message.Raw = &spbytes
+		return message, nil
+	}
+	// ok_packet
 	if resp.resultSet == nil {
 		okbytes := packet.ToPacketBytes(proto.PackOK(resp.ok))
 		message.Raw = &okbytes
@@ -66,13 +74,23 @@ func (d *Dissector) readCmdQueryResponse() (*queryResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	data := pkt.Datas
 
 	req := d.popRequest()
 	resp := &queryResponse{}
 	resp.reqCmd = req.Meta["OP_TYPE"]
 
+	// COM_STMT_PREPARE_OK 和 OK_PACKET 似乎很像
+	if resp.reqCmd == "COM_STMT_PREPARE" {
+		stmtPrepareOk, err := proto.UnPackStmtPrepareOk(data, d.respStream)
+		if err != nil {
+			return nil, err
+		}
+		resp.stmtPrepareOk = stmtPrepareOk
+		return resp, nil
+	}
+
 	resp.ok = &proto.OK{}
-	data := pkt.Datas
 	switch data[0] {
 	case proto.OK_PACKET:
 		ok, err := proto.UnPackOK(data)

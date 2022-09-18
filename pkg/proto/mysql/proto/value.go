@@ -1,10 +1,12 @@
 package proto
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -31,13 +33,18 @@ func MakeTrusted(typ Type, val []byte) Value {
 
 // BuildValue builds a value from any go type. sqltype.Value is
 // also allowed.
-func BuildValue(goval interface{}) (v Value, err error) {
+func BuildValue(goval interface{}, typ Type) (v Value, err error) {
 	// Look for the most common types first.
 	switch goval := goval.(type) {
 	case nil:
 		// no op
 	case []byte:
-		v = MakeTrusted(VarBinary, goval)
+		switch typ {
+		case Timestamp, Date, Datetime, Time:
+			v = MakeTrusted(typ, goval)
+		default:
+			v = MakeTrusted(VarBinary, goval)
+		}
 	case int64:
 		v = MakeTrusted(Int64, strconv.AppendInt(nil, int64(goval), 10))
 	case uint64:
@@ -61,9 +68,15 @@ func BuildValue(goval interface{}) (v Value, err error) {
 	case uint32:
 		v = MakeTrusted(Uint32, strconv.AppendUint(nil, uint64(goval), 10))
 	case float32:
-		v = MakeTrusted(Float32, strconv.AppendFloat(nil, float64(goval), 'f', -1, 64))
+		v = MakeTrusted(Float32, strconv.AppendFloat(nil, float64(goval), 'f', -1, 32))
 	case string:
-		v = MakeTrusted(VarBinary, []byte(goval))
+		switch typ {
+		case Decimal, Text, Blob, VarChar, Char,
+			Bit, Enum, Set, Geometry, TypeJSON:
+			v = MakeTrusted(typ, []byte(goval))
+		default:
+			v = MakeTrusted(VarBinary, []byte(goval))
+		}
 	case time.Time:
 		v = MakeTrusted(Datetime, []byte(goval.Format("2006-01-02 15:04:05")))
 	case Value:
@@ -196,13 +209,8 @@ func ParseMySQLValues(buf *Buffer, typ Type) (interface{}, error) {
 				return nil, err
 			}
 
-			val := strconv.Itoa(int(year)) + "-" +
-				strconv.Itoa(int(month)) + "-" +
-				strconv.Itoa(int(day)) + " " +
-				strconv.Itoa(int(hour)) + ":" +
-				strconv.Itoa(int(minute)) + ":" +
-				strconv.Itoa(int(second)) + "." +
-				strconv.Itoa(int(microSecond))
+			val := fmt.Sprintf("%4d-%02d-%02d %02d:%02d:%02d.%06d",
+				year, month, day, hour, minute, second, microSecond)
 			out = []byte(val)
 			return out, nil
 		case 0x07:
@@ -236,12 +244,8 @@ func ParseMySQLValues(buf *Buffer, typ Type) (interface{}, error) {
 				return nil, err
 			}
 
-			val := strconv.Itoa(int(year)) + "-" +
-				strconv.Itoa(int(month)) + "-" +
-				strconv.Itoa(int(day)) + " " +
-				strconv.Itoa(int(hour)) + ":" +
-				strconv.Itoa(int(minute)) + ":" +
-				strconv.Itoa(int(second))
+			val := fmt.Sprintf("%4d-%02d-%02d %02d:%02d:%02d",
+				year, month, day, hour, minute, second)
 			out = []byte(val)
 			return out, nil
 		case 0x04:
@@ -259,9 +263,7 @@ func ParseMySQLValues(buf *Buffer, typ Type) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			val := strconv.Itoa(int(year)) + "-" +
-				strconv.Itoa(int(month)) + "-" +
-				strconv.Itoa(int(day))
+			val := fmt.Sprintf("%4d-%02d-%02d", year, month, day)
 			out = []byte(val)
 			return out, nil
 		default:
@@ -310,14 +312,12 @@ func ParseMySQLValues(buf *Buffer, typ Type) (interface{}, error) {
 				return nil, err
 			}
 
-			val := ""
+			var val string
 			if isNegative == 0x01 {
-				val += "-"
+				val = fmt.Sprintf("-%02d:%02d:%02d.%06d", hours, minute, second, microSecond)
+			} else {
+				val = fmt.Sprintf("%02d:%02d:%02d.%06d", hours, minute, second, microSecond)
 			}
-			val += strconv.Itoa(int(hours)) + ":" +
-				strconv.Itoa(int(minute)) + ":" +
-				strconv.Itoa(int(second)) + "." +
-				strconv.Itoa(int(microSecond))
 			out = []byte(val)
 			return out, nil
 		case 0x08:
@@ -348,13 +348,12 @@ func ParseMySQLValues(buf *Buffer, typ Type) (interface{}, error) {
 				return nil, err
 			}
 
-			val := ""
+			var val string
 			if isNegative == 0x01 {
-				val += "-"
+				val = fmt.Sprintf("-%02d:%02d:%02d", hours, minute, second)
+			} else {
+				val = fmt.Sprintf("%02d:%02d:%02d", hours, minute, second)
 			}
-			val += strconv.Itoa(int(hours)) + ":" +
-				strconv.Itoa(int(minute)) + ":" +
-				strconv.Itoa(int(second))
 			out = []byte(val)
 			return out, nil
 		default:
@@ -369,4 +368,194 @@ func ParseMySQLValues(buf *Buffer, typ Type) (interface{}, error) {
 		return nil, fmt.Errorf("type.unhandle.error")
 	}
 	return nil, fmt.Errorf("type.unhandle.error")
+}
+
+func WriteMySQLValues(buf *Buffer, value Value) error {
+	switch value.Type {
+	case Null:
+		return nil
+	case Int8, Uint8:
+		buf.WriteU8(value.Value[0])
+		return nil
+	case Uint16:
+		n, err := strconv.ParseUint(string(value.Value), 10, 16)
+		if err != nil {
+			return err
+		}
+		buf.WriteU16(uint16(n))
+		return nil
+	case Int16, Year:
+		n, err := strconv.ParseInt(string(value.Value), 10, 16)
+		if err != nil {
+			return err
+		}
+		buf.WriteU16(uint16(n))
+		return nil
+	case Uint24, Uint32:
+		n, err := strconv.ParseUint(string(value.Value), 10, 32)
+		if err != nil {
+			return err
+		}
+		buf.WriteU32(uint32(n))
+		return nil
+	case Int24, Int32:
+		n, err := strconv.ParseInt(string(value.Value), 10, 32)
+		if err != nil {
+			return err
+		}
+		buf.WriteU32(uint32(n))
+		return nil
+	case Float32:
+		n, err := strconv.ParseFloat(string(value.Value), 32)
+		if err != nil {
+			return err
+		}
+		buf.WriteU32(math.Float32bits(float32(n)))
+		return nil
+	case Uint64:
+		n, err := strconv.ParseUint(string(value.Value), 10, 64)
+		if err != nil {
+			return err
+		}
+		buf.WriteU64(n)
+		return nil
+	case Int64:
+		n, err := strconv.ParseInt(string(value.Value), 10, 64)
+		if err != nil {
+			return err
+		}
+		buf.WriteU64(uint64(n))
+		return nil
+	case Float64:
+		n, err := strconv.ParseFloat(string(value.Value), 64)
+		if err != nil {
+			return err
+		}
+		buf.WriteU64(math.Float64bits(n))
+		return nil
+	case Timestamp, Date, Datetime:
+		var timestamp time.Time
+		var err error
+		var byteLen uint8 = 0
+		if bytes.ContainsRune(value.Value, '.') {
+			byteLen = 11
+			timestamp, err = time.Parse("2006-01-02 15:04:05.000000", string(value.Value))
+			if err != nil {
+				return err
+			}
+		} else if bytes.ContainsRune(value.Value, ' ') {
+			byteLen = 7
+			timestamp, err = time.Parse("2006-01-02 15:04:05", string(value.Value))
+			if err != nil {
+				return err
+			}
+		} else if bytes.ContainsRune(value.Value, '-') {
+			byteLen = 4
+			timestamp, err = time.Parse("2006-01-02", string(value.Value))
+			if err != nil {
+				return err
+			}
+		}
+
+		buf.WriteU8(byteLen)
+		if byteLen >= 4 {
+			buf.WriteU16(uint16(timestamp.Year()))
+			buf.WriteU8(uint8(timestamp.Month()))
+			buf.WriteU8(uint8(timestamp.Day()))
+		}
+		if byteLen >= 7 {
+			buf.WriteU8(uint8(timestamp.Hour()))
+			buf.WriteU8(uint8(timestamp.Minute()))
+			buf.WriteU8(uint8(timestamp.Second()))
+		}
+		if byteLen >= 11 {
+			buf.WriteU32(uint32(timestamp.Nanosecond() / int(time.Microsecond)))
+		}
+		return nil
+	case Time:
+		negative := value.Value[0] == '-'
+		var byteLen uint8 = 0
+		timeStr := string(value.Value)
+		if timeStr == "_00:00:00_" {
+			byteLen = 0
+		} else if bytes.ContainsRune(value.Value, '.') {
+			byteLen = 12
+		} else if bytes.ContainsRune(value.Value, ':') {
+			byteLen = 8
+		}
+
+		if byteLen == 0 {
+			return nil
+		}
+
+		terms := strings.FieldsFunc(timeStr, func(r rune) bool {
+			return r == ':' || r == '.'
+		})
+
+		hours, err := strconv.ParseInt(terms[0], 10, 32)
+		if err != nil {
+			return err
+		}
+		if negative {
+			hours = -hours
+		}
+		days := hours / 24
+		hours = hours % 24
+
+		minutes, err := strconv.ParseInt(terms[1], 10, 8)
+		if err != nil {
+			return err
+		}
+		seconds, err := strconv.ParseInt(terms[2], 10, 8)
+		if err != nil {
+			return err
+		}
+
+		if byteLen == 8 {
+			buf.WriteU8(byteLen)
+			if negative {
+				buf.WriteU8(1)
+			} else {
+				buf.WriteU8(0)
+			}
+			buf.WriteU32(uint32(days))
+			buf.WriteU8(uint8(hours))
+			buf.WriteU8(uint8(minutes))
+			buf.WriteU8(uint8(seconds))
+			return nil
+		}
+
+		microSeconds, err := strconv.ParseInt(terms[3], 10, 32)
+		if err != nil {
+			return err
+		}
+
+		if byteLen == 12 {
+			buf.WriteU8(byteLen)
+			if negative {
+				buf.WriteU8(1)
+			} else {
+				buf.WriteU8(0)
+			}
+			buf.WriteU32(uint32(days))
+			buf.WriteU8(uint8(hours))
+			buf.WriteU8(uint8(minutes))
+			buf.WriteU8(uint8(seconds))
+			buf.WriteU32(uint32(microSeconds))
+			return nil
+		}
+
+		return fmt.Errorf("time.error")
+
+	case Decimal, Text, Blob, VarChar, Char,
+		Bit, Enum, Set, Geometry, TypeJSON:
+		buf.WriteLenEncodeBytes(value.Value)
+		return nil
+	case VarBinary, Binary:
+		buf.WriteLenEncodeBytes(value.Value)
+		return nil
+	default:
+		return fmt.Errorf("type.unhandle.error")
+	}
+	return fmt.Errorf("type.unhandle.error")
 }

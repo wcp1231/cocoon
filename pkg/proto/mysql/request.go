@@ -43,6 +43,10 @@ func (d *Dissector) readRequest() (*common.GenericMessage, error) {
 	default:
 		fmt.Printf("Mysql command not implemented. %v\n%v\n", proto.CommandString(data[0]), string(data))
 	}
-	d.flyingRequests.PushBack(message)
+	// STMT_CLOSE has not response
+	if data[0] != proto.COM_STMT_CLOSE && data[0] != proto.COM_STMT_SEND_LONG_DATA {
+		d.flyingRequests.PushBack(message)
+	}
+
 	return message, nil
 }

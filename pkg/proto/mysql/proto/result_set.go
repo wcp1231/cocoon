@@ -2,7 +2,6 @@ package proto
 
 import (
 	"cocoon/pkg/proto/mysql/packet"
-	"errors"
 	"fmt"
 )
 
@@ -11,7 +10,7 @@ type ResultSet struct {
 	reqCmd string
 
 	Columns    uint64
-	ColumnsEOR []byte
+	ColumnsEOF []byte
 	Fields     []*Field
 	Rows       [][]Value
 }
@@ -54,7 +53,7 @@ func (r *resultSetReader) read(reqCmd string) (*ResultSet, error) {
 		return nil, err
 	}
 	if r.capabilities&CLIENT_DEPRECATE_EOF == 0 {
-		if resultSet.ColumnsEOR, err = r.readEOF(); err != nil {
+		if resultSet.ColumnsEOF, err = readEOF(r.stream); err != nil {
 			return nil, err
 		}
 	}
@@ -120,22 +119,6 @@ func (r *resultSetReader) readTextResultSet(resultSet *ResultSet) error {
 	return nil
 }
 
-func (r *resultSetReader) readEOF() ([]byte, error) {
-	pkt, err := r.stream.NextPacket()
-	if err != nil {
-		return nil, err
-	}
-	data := pkt.Datas
-	switch data[0] {
-	case EOF_PACKET:
-		return data, nil
-	case ERR_PACKET:
-		return nil, UnPackERR(data).ToError()
-	default:
-		return nil, errors.New(fmt.Sprintf("unexpected.eof.packet[%+v]", data))
-	}
-}
-
 // resultSetWriter use to pack the ResultSet packets.
 type resultSetWriter struct {
 	buf        *Buffer
@@ -160,9 +143,10 @@ func PackResultSet(resultSet *ResultSet) []byte {
 }
 
 func (w *resultSetWriter) packBinaryResultSet() []byte {
-	buf := NewBuffer(64)
-
-	return buf.Datas()
+	w.packResultSetColumnCount()
+	w.packColumns()
+	w.packBinaryRows()
+	return w.buf.Datas()
 }
 
 func (w *resultSetWriter) packTextResultSet() []byte {
@@ -188,23 +172,59 @@ func (w *resultSetWriter) packColumns() {
 	}
 }
 
-func (w *resultSetWriter) packTextRows() {
+func (w *resultSetWriter) packBinaryRows() {
 	for _, row := range w.resultSet.Rows {
-		w.buf.WriteBytes(packet.ToPacketBytesWithSequenceID(w.packTextResultSetRow(row), w.sequenceID))
+		w.buf.WriteBytes(packet.ToPacketBytesWithSequenceID(w.packBinaryRow(row), w.sequenceID))
 		w.sequenceID += 1
 	}
+	// TODO If the CLIENT_DEPRECATE_EOF client capability flag is set, OK_Packet; else EOF_Packet.
 	w.writeEOF()
 }
 
-func (w *resultSetWriter) packTextResultSetRow(row []Value) []byte {
+func (w *resultSetWriter) packBinaryRow(row []Value) []byte {
+	columnsCount := len(w.resultSet.Fields)
+	rowBuffer := NewBuffer(256)
+	valuesBuffer := NewBuffer(256)
+	nullMask := make([]byte, (columnsCount+7+2)/8)
+	for i, value := range row {
+		if value.Type == Type_NULL_TYPE {
+			nullMask[(i+2)>>3] |= 1 << ((i + 2) & 7)
+		} else {
+			err := WriteMySQLValues(valuesBuffer, value)
+			if err != nil {
+				// TODO
+				fmt.Printf("Packet binary row field failed. value=%v error=%v\n", value, err)
+			}
+		}
+	}
+	rowBuffer.WriteU8(OK_PACKET)
+	rowBuffer.WriteBytes(nullMask)
+	rowBuffer.WriteBytes(valuesBuffer.Datas())
+	return rowBuffer.Datas()
+}
+
+func (w *resultSetWriter) packTextRows() {
+	for _, row := range w.resultSet.Rows {
+		w.buf.WriteBytes(packet.ToPacketBytesWithSequenceID(w.packTextRow(row), w.sequenceID))
+		w.sequenceID += 1
+	}
+	// TODO If the CLIENT_DEPRECATE_EOF client capability flag is set, OK_Packet; else EOF_Packet.
+	w.writeEOF()
+}
+
+func (w *resultSetWriter) packTextRow(row []Value) []byte {
 	buf := NewBuffer(64)
 	for _, value := range row {
-		buf.WriteLenEncodeBytes(value.Value)
+		if value.Type == Null {
+			buf.WriteLenEncodeNUL()
+		} else {
+			buf.WriteLenEncodeBytes(value.Value)
+		}
 	}
 	return buf.Datas()
 }
 
 func (w *resultSetWriter) writeEOF() {
-	w.buf.WriteBytes(packet.ToPacketBytesWithSequenceID(w.resultSet.ColumnsEOR, w.sequenceID))
+	writeEOF(w.buf, w.resultSet.ColumnsEOF, w.sequenceID)
 	w.sequenceID += 1
 }

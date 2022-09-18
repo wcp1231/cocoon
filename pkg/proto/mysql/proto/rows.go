@@ -280,7 +280,7 @@ func (r *BinaryRows) RowValues() ([]Value, error) {
 		}
 
 		if v != nil {
-			val, err := BuildValue(v)
+			val, err := BuildValue(v, r.Fields[i].Type)
 			if err != nil {
 				//r.c.Cleanup()
 				return nil, err
