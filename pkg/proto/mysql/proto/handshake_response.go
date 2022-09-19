@@ -33,6 +33,7 @@ type HandshakeResponse41 struct {
 }
 
 // UnPackHandshakeResponse used to unpack the Handshake Response packet.
+// 主要目的是获取 Client 的 ClientFlag 确定后续请求数据的格式
 func UnPackHandshakeResponse(data []byte) (HandshakeResponse, error) {
 	buf := ReadBuffer(data)
 
@@ -122,9 +123,9 @@ func unPackHandshakeResponse41(buf *Buffer) (*HandshakeResponse41, error) {
 		if handshake.KeyValLength, err = buf.ReadLenEncode(); err != nil {
 			return nil, err
 		}
-		var i uint64
 		var key, value string
-		for i = 0; i < handshake.KeyValLength; i++ {
+		for !buf.Empty() {
+
 			if key, err = buf.ReadLenEncodeString(); err != nil {
 				return nil, err
 			}

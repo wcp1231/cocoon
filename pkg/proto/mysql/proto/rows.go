@@ -154,6 +154,8 @@ func (r *BaseRows) Next() bool {
 		// - an OK packet with an EOF header if
 		// sqldb.CLIENT_DEPRECATE_EOF is set.
 		r.end = true
+		// 让 ResultSet 里可以读取并记录 EOF packet
+		r.buffer.Reset(r.data)
 		return false
 
 	case ERR_PACKET:

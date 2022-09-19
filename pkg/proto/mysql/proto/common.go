@@ -66,6 +66,10 @@ func (b *Buffer) extend(n int) {
 	}
 }
 
+func (b *Buffer) Empty() bool {
+	return b.seek >= b.pos
+}
+
 // WriteU8 used to write uint8.
 func (b *Buffer) WriteU8(v uint8) {
 	b.extend(1)

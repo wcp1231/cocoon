@@ -63,7 +63,7 @@ func (d *Dissector) readResponse() (*common.GenericMessage, error) {
 		}
 		fmt.Println()
 	}
-	raw := proto.PackResultSet(resp.resultSet)
+	raw := proto.PackResultSet(resp.resultSet, d.capabilities)
 	message.Raw = &raw
 	return message, nil
 }

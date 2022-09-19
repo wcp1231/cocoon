@@ -81,6 +81,9 @@ func (d *Dissector) ReadClientHandshakeResponse() ([]byte, error) {
 	}
 	data := pkt.Datas
 	handshakeResponse, err := proto.UnPackHandshakeResponse(data)
+	if err != nil {
+		return nil, err
+	}
 	d.capabilities = handshakeResponse.GetClientFlag()
 	return pkt.Raw(), nil
 }

@@ -13,6 +13,7 @@ type ResultSet struct {
 	ColumnsEOF []byte
 	Fields     []*Field
 	Rows       [][]Value
+	RowEOF     []byte
 }
 
 type resultSetReader struct {
@@ -101,6 +102,7 @@ func (r *resultSetReader) readBinaryResultSet(resultSet *ResultSet) error {
 		rows = append(rows, values)
 	}
 	resultSet.Rows = rows
+	resultSet.RowEOF = rowReader.Datas()
 	return nil
 }
 
@@ -116,6 +118,7 @@ func (r *resultSetReader) readTextResultSet(resultSet *ResultSet) error {
 		rows = append(rows, values)
 	}
 	resultSet.Rows = rows
+	resultSet.RowEOF = rowReader.Datas()
 	return nil
 }
 
@@ -130,11 +133,12 @@ type resultSetWriter struct {
 	capabilities uint32
 }
 
-func PackResultSet(resultSet *ResultSet) []byte {
+func PackResultSet(resultSet *ResultSet, capabilities uint32) []byte {
 	writer := resultSetWriter{
-		buf:        NewBuffer(256),
-		sequenceID: 1,
-		resultSet:  resultSet,
+		buf:          NewBuffer(256),
+		sequenceID:   1,
+		resultSet:    resultSet,
+		capabilities: capabilities,
 	}
 	if resultSet.reqCmd == "COM_STMT_EXECUTE" {
 		return writer.packBinaryResultSet()
@@ -168,7 +172,7 @@ func (w *resultSetWriter) packColumns() {
 		w.sequenceID += 1
 	}
 	if w.capabilities&CLIENT_DEPRECATE_EOF == 0 {
-		w.writeEOF()
+		w.writeEOF(w.resultSet.ColumnsEOF)
 	}
 }
 
@@ -178,7 +182,7 @@ func (w *resultSetWriter) packBinaryRows() {
 		w.sequenceID += 1
 	}
 	// TODO If the CLIENT_DEPRECATE_EOF client capability flag is set, OK_Packet; else EOF_Packet.
-	w.writeEOF()
+	w.writeEOF(w.resultSet.RowEOF)
 }
 
 func (w *resultSetWriter) packBinaryRow(row []Value) []byte {
@@ -209,7 +213,7 @@ func (w *resultSetWriter) packTextRows() {
 		w.sequenceID += 1
 	}
 	// TODO If the CLIENT_DEPRECATE_EOF client capability flag is set, OK_Packet; else EOF_Packet.
-	w.writeEOF()
+	w.writeEOF(w.resultSet.RowEOF)
 }
 
 func (w *resultSetWriter) packTextRow(row []Value) []byte {
@@ -224,7 +228,7 @@ func (w *resultSetWriter) packTextRow(row []Value) []byte {
 	return buf.Datas()
 }
 
-func (w *resultSetWriter) writeEOF() {
-	writeEOF(w.buf, w.resultSet.ColumnsEOF, w.sequenceID)
+func (w *resultSetWriter) writeEOF(eofBytes []byte) {
+	writeEOF(w.buf, eofBytes, w.sequenceID)
 	w.sequenceID += 1
 }
