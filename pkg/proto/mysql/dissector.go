@@ -14,8 +14,8 @@ type Dissector struct {
 	respReader *bufio.Reader
 
 	// 对外暴露的 channel
-	requestC  chan *common.GenericMessage
-	responseC chan *common.GenericMessage
+	requestC  chan common.Message
+	responseC chan common.Message
 
 	reqStream  *packet.Stream
 	respStream *packet.Stream
@@ -26,7 +26,7 @@ type Dissector struct {
 	flyingRequests *list.List
 }
 
-func NewRequestDissector(reqC, respC chan *common.GenericMessage) *Dissector {
+func NewRequestDissector(reqC, respC chan common.Message) *Dissector {
 	return &Dissector{
 		requestC:       reqC,
 		responseC:      respC,

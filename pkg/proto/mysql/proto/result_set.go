@@ -7,7 +7,7 @@ import (
 
 type ResultSet struct {
 	// 区分是 TextResultSet 还是 BinaryResultSet
-	reqCmd string
+	rowMode RowMode
 
 	Columns    uint64
 	ColumnsEOF []byte
@@ -26,16 +26,16 @@ type resultSetReader struct {
 
 // UnPackResultSet used to unpack the ResultSet packet.
 // https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_com_query_response_text_resultset.html
-func UnPackResultSet(reqCmd string, capabilities uint32, firstPacket []byte, stream *packet.Stream) (*ResultSet, error) {
+func UnPackResultSet(rowMode RowMode, capabilities uint32, firstPacket []byte, stream *packet.Stream) (*ResultSet, error) {
 	reader := resultSetReader{
 		stream:       stream,
 		data:         firstPacket,
 		capabilities: capabilities,
 	}
-	return reader.read(reqCmd)
+	return reader.read(rowMode)
 }
 
-func (r *resultSetReader) read(reqCmd string) (*ResultSet, error) {
+func (r *resultSetReader) read(rowMode RowMode) (*ResultSet, error) {
 	columnCount, err := ColumnCount(r.data)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (r *resultSetReader) read(reqCmd string) (*ResultSet, error) {
 	}
 
 	resultSet := &ResultSet{
-		reqCmd:  reqCmd,
+		rowMode: rowMode,
 		Columns: columnCount,
 	}
 	err = r.readColumns(resultSet)
@@ -58,12 +58,12 @@ func (r *resultSetReader) read(reqCmd string) (*ResultSet, error) {
 			return nil, err
 		}
 	}
-	if reqCmd == "COM_STMT_EXECUTE" {
+	if rowMode == BinaryRowMode {
 		err := r.readBinaryResultSet(resultSet)
 		if err != nil {
 			return nil, err
 		}
-	} else if reqCmd == "COM_QUERY" {
+	} else if rowMode == TextRowMode {
 		err := r.readTextResultSet(resultSet)
 		if err != nil {
 			return nil, err
@@ -140,7 +140,7 @@ func PackResultSet(resultSet *ResultSet, capabilities uint32) []byte {
 		resultSet:    resultSet,
 		capabilities: capabilities,
 	}
-	if resultSet.reqCmd == "COM_STMT_EXECUTE" {
+	if resultSet.rowMode == BinaryRowMode {
 		return writer.packBinaryResultSet()
 	}
 	return writer.packTextResultSet()

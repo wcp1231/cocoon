@@ -22,8 +22,8 @@ const (
 type Dissector struct {
 	reqReader  *bufio.Reader
 	respReader *bufio.Reader
-	requestC   chan *common.GenericMessage
-	responseC  chan *common.GenericMessage
+	requestC   chan common.Message
+	responseC  chan common.Message
 }
 
 type dubboHeader struct {
@@ -68,7 +68,7 @@ func (d *dubboHeader) hasException() bool {
 	return d.Type&PackageResponse_Exception != 0x00
 }
 
-func NewRequestDissector(reqC, respC chan *common.GenericMessage) *Dissector {
+func NewRequestDissector(reqC, respC chan common.Message) *Dissector {
 	return &Dissector{
 		requestC:  reqC,
 		responseC: respC,

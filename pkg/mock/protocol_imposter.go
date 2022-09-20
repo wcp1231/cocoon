@@ -7,8 +7,8 @@ import (
 
 type RequestImposter interface {
 	ID() int32
-	Match(req *common.GenericMessage) bool
-	Data() *common.GenericMessage
+	Match(req common.Message) bool
+	Data() common.Message
 	GetConfig() interface{}
 }
 
@@ -18,7 +18,7 @@ type ProtocolImposter struct {
 	mutex sync.RWMutex
 }
 
-func (i *ProtocolImposter) Mock(msg *common.GenericMessage) *common.MockResult {
+func (i *ProtocolImposter) Mock(msg common.Message) *common.MockResult {
 	result := &common.MockResult{
 		Pass: true,
 	}

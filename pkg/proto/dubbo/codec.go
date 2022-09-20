@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-func ReadPacket(reader *bufio.Reader) (*common.GenericMessage, error) {
+func ReadPacket(reader *bufio.Reader) (common.Message, error) {
 	header, err := ReadHeader(reader)
 	if err != nil {
 		return nil, err
@@ -24,23 +24,23 @@ func ReadPacket(reader *bufio.Reader) (*common.GenericMessage, error) {
 
 	message := common.NewDubboGenericMessage()
 	if header.isHeartbeat() {
-		message.Meta["HEARTBEAT"] = "true"
+		message.SetHeartbeat()
 	} else if header.isRequest() {
 		request, err := readRequestBody(header, body)
 		fmt.Printf("Dubbo body decode. err=%v, request=%+v\n", err, request)
-		message.Header["dubboVersion"] = request.dubboVersion
-		message.Header["serviceVersion"] = request.serviceVersion
-		message.Header["method"] = request.method
-		message.Header["target"] = request.target
-		message.Header["args"] = formatAttachments(request.args)
-		message.Header["attachments"] = formatAttachments(request.attachments)
+		message.SetDubboVersion(request.dubboVersion)
+		message.SetServiceVersion(request.serviceVersion)
+		message.SetMethod(request.method)
+		message.SetTarget(request.target)
+		message.SetArgs(request.args)
+		message.SetAttachments(request.attachments)
 	} else {
 		response, err := readResponseBody(header, body)
 		fmt.Printf("Dubbo body decode. err=%v, response=%+v\n", err, response)
-		message.Header["dubboVersion"] = response.dubboVersion
-		message.Header["exception"] = response.exception
-		message.Header["respObj"] = fmt.Sprintf("%v", response.respObj)
-		message.Header["attachments"] = formatAttachments(response.attachments)
+		message.SetDubboVersion(response.dubboVersion)
+		message.SetException(response.exception)
+		message.SetResponse(response.respObj)
+		message.SetAttachments(response.attachments)
 	}
 
 	headerBytes := EncodeHeader(header)

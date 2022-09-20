@@ -15,13 +15,13 @@ type requestResponseHandler struct {
 	inboundConn  *conn
 	outboundConn *conn
 
-	requestC  chan *common.GenericMessage
-	responseC chan *common.GenericMessage
+	requestC  chan common.Message
+	responseC chan common.Message
 }
 
 func newRequestResponseHandler(ctx context.Context, server *Agent, proto *common.Protocol, inbound, outbound *conn) *requestResponseHandler {
-	requestC := make(chan *common.GenericMessage)
-	responseC := make(chan *common.GenericMessage)
+	requestC := make(chan common.Message)
+	responseC := make(chan common.Message)
 	return &requestResponseHandler{
 		server:       server,
 		ctx:          ctx,
@@ -53,7 +53,7 @@ func (c *requestResponseHandler) handleRequest() {
 			if !more {
 				return
 			}
-			request.Id = c.server.nextId()
+			request.SetId(c.server.nextId())
 			c.server.logger.Debug("Conn request",
 				zap.String("src", c.inboundConn.addr),
 				zap.String("dst", c.outboundConn.addr),
@@ -71,7 +71,7 @@ func (c *requestResponseHandler) handleRequest() {
 
 // tryToMock 由 agent 进行 mock
 // 根据协议和 agent 配置判断是否进行 mock
-func (c *requestResponseHandler) tryToMock(request *common.GenericMessage) error {
+func (c *requestResponseHandler) tryToMock(request common.Message) error {
 	// record request
 	c.server.recordServer.RecordRequest(request)
 
@@ -83,7 +83,7 @@ func (c *requestResponseHandler) tryToMock(request *common.GenericMessage) error
 }
 
 // requestMockServer 获取 mock 结果
-func (c *requestResponseHandler) requestMockServer(request *common.GenericMessage) error {
+func (c *requestResponseHandler) requestMockServer(request common.Message) error {
 	result := c.server.mockServer.Mock(c.proto.Name, request)
 
 	if result.Pass {
@@ -96,8 +96,8 @@ func (c *requestResponseHandler) requestMockServer(request *common.GenericMessag
 
 // sendRequestToOriginAndWait 处理 request-response 类型的情况
 // 不支持 steam 或者双向通信类型的情况
-func (c *requestResponseHandler) sendRequestToOriginAndWait(request *common.GenericMessage) error {
-	_, err := c.outboundConn.c.Write(*request.Raw)
+func (c *requestResponseHandler) sendRequestToOriginAndWait(request common.Message) error {
+	_, err := c.outboundConn.c.Write(*request.GetRaw())
 	if err != nil {
 		c.server.logger.Debug("Send request to origin failed", zap.Error(err))
 	}
@@ -117,10 +117,10 @@ func (c *requestResponseHandler) sendRequestToOriginAndWait(request *common.Gene
 // handleResponse 处理 response
 // 无论是 mock 还是真实数据
 // 主要功能暂时只有记录
-func (c *requestResponseHandler) handleResponse(request, response *common.GenericMessage) error {
+func (c *requestResponseHandler) handleResponse(request, response common.Message) error {
 	// record response
 	c.server.recordServer.RecordResponse(request, response)
-	return c.sendResponseToInbound(response.Raw)
+	return c.sendResponseToInbound(response.GetRaw())
 }
 
 func (c *requestResponseHandler) sendResponseToInbound(data *[]byte) error {

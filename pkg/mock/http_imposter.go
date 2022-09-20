@@ -73,7 +73,8 @@ func newFieldMatcher(field *fieldMockConfig) FieldMatcher {
 	}
 }
 
-func (h *HttpRequestMatcher) Match(req *common.GenericMessage) bool {
+func (h *HttpRequestMatcher) Match(r common.Message) bool {
+	req := r.(*common.HTTPMessage)
 	if h.method != nil {
 		method := req.Meta["METHOD"]
 		if !h.method.Match(method) {
@@ -105,7 +106,7 @@ func (h *HttpRequestMatcher) Match(req *common.GenericMessage) bool {
 	return true
 }
 
-func (h *HttpRequestMatcher) Data() *common.GenericMessage {
+func (h *HttpRequestMatcher) Data() common.Message {
 	response := http.Response{}
 	response.StatusCode, _ = strconv.Atoi(h.status)
 	response.Header = http.Header{}
@@ -113,7 +114,7 @@ func (h *HttpRequestMatcher) Data() *common.GenericMessage {
 	response.ProtoMinor = 1
 
 	message := common.NewHTTPGenericMessage()
-	message.Meta["MOCK"] = "true"
+	message.SetMock()
 	message.Meta["STATUS"] = h.status
 	for k, v := range h.respHeader {
 		message.Header[k] = v

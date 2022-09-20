@@ -10,7 +10,7 @@ import (
 // TODO
 var removeSpaces = regexp.MustCompile(`\s+`)
 
-func (d *Dissector) readRequest() (*common.GenericMessage, error) {
+func (d *Dissector) readRequest() (common.Message, error) {
 	pkt, err := d.reqStream.NextPacket()
 	if err != nil {
 		return nil, err

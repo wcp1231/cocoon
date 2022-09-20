@@ -9,8 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"strconv"
-	"strings"
 )
 
 type Opcode int32
@@ -51,7 +49,7 @@ func (h *MsgHeader) Valid() bool {
 
 type Parser struct{}
 
-func ParseQuery(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseQuery(header MsgHeader, r io.Reader) common.Message {
 	flag := MustReadInt32(r)
 	fullCollectionName := ReadCString(r)
 	numberToSkip := MustReadInt32(r)
@@ -61,14 +59,14 @@ func ParseQuery(header MsgHeader, r io.Reader) *common.GenericMessage {
 	selector := ToJson(ReadDocument(r))
 
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "Query"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["FLAG"] = strconv.Itoa(int(flag))
-	result.Meta["COLLECTION"] = fullCollectionName
-	result.Meta["SKIP"] = strconv.Itoa(int(numberToSkip))
-	result.Meta["RETURN"] = strconv.Itoa(int(numberToReturn))
-	result.Meta["QUERY"] = queryJson
-	result.Meta["SELECTOR"] = selector
+	result.SetOpType("Query")
+	result.SetRequestId(header.RequestID)
+	result.SetFlag(flag)
+	result.SetCollection(fullCollectionName)
+	result.SetNumberToSkip(numberToSkip)
+	result.SetNumberToReturn(numberToReturn)
+	result.SetQuery(queryJson)
+	result.SetSelector(selector)
 
 	queryMap := parseQuery(query)
 	for k, v := range queryMap {
@@ -78,7 +76,7 @@ func ParseQuery(header MsgHeader, r io.Reader) *common.GenericMessage {
 	return result
 }
 
-func ParseInsert(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseInsert(header MsgHeader, r io.Reader) common.Message {
 	flag := MustReadInt32(r)
 	fullCollectionName := ReadCString(r)
 	docs := ReadDocuments(r)
@@ -92,16 +90,15 @@ func ParseInsert(header MsgHeader, r io.Reader) *common.GenericMessage {
 	//	currentTime(), header.RequestID, fullCollectionName, flag, docsStr)
 
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "Insert"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["FLAG"] = strconv.Itoa(int(flag))
-	result.Meta["COLLECTION"] = fullCollectionName
-	body := []byte(docsStr)
-	result.Body = &body
+	result.SetOpType("Insert")
+	result.SetRequestId(header.RequestID)
+	result.SetFlag(flag)
+	result.SetCollection(fullCollectionName)
+	result.SetMongoBody(docsStr)
 	return result
 }
 
-func ParseUpdate(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseUpdate(header MsgHeader, r io.Reader) common.Message {
 	_ = MustReadInt32(r)
 	fullCollectionName := ReadCString(r)
 	flag := MustReadInt32(r)
@@ -111,17 +108,16 @@ func ParseUpdate(header MsgHeader, r io.Reader) *common.GenericMessage {
 	//	currentTime(), header.RequestID, fullCollectionName, flag, selector, update)
 
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "Update"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["FLAG"] = strconv.Itoa(int(flag))
-	result.Meta["COLLECTION"] = fullCollectionName
-	result.Meta["SELECTOR"] = selector
-	body := []byte(update)
-	result.Body = &body
+	result.SetOpType("Update")
+	result.SetRequestId(header.RequestID)
+	result.SetFlag(flag)
+	result.SetCollection(fullCollectionName)
+	result.SetSelector(selector)
+	result.SetMongoBody(update)
 	return result
 }
 
-func ParseGetMore(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseGetMore(header MsgHeader, r io.Reader) common.Message {
 	_ = MustReadInt32(r)
 	fullCollectionName := ReadCString(r)
 	numberToReturn := MustReadInt32(r)
@@ -130,16 +126,16 @@ func ParseGetMore(header MsgHeader, r io.Reader) *common.GenericMessage {
 	//	currentTime(), header.RequestID, fullCollectionName, numberToReturn, cursorID)
 
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "GetMore"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["COLLECTION"] = fullCollectionName
-	result.Meta["RETURN"] = strconv.Itoa(int(numberToReturn))
-	result.Meta["CURSOR_ID"] = strconv.FormatInt(*cursorID, 10)
+	result.SetOpType("GetMore")
+	result.SetRequestId(header.RequestID)
+	result.SetCollection(fullCollectionName)
+	result.SetNumberToReturn(numberToReturn)
+	result.SetCursorId(*cursorID)
 	// TODO raw
 	return result
 }
 
-func ParseDelete(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseDelete(header MsgHeader, r io.Reader) common.Message {
 	_ = MustReadInt32(r)
 	fullCollectionName := ReadCString(r)
 	//flag := MustReadInt32(r)
@@ -147,22 +143,22 @@ func ParseDelete(header MsgHeader, r io.Reader) *common.GenericMessage {
 	//fmt.Printf("%s DELETE id:%d coll:%s flag:%b sel:%v \n",
 	//	currentTime(), header.RequestID, fullCollectionName, flag, selector)
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "Delete"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["COLLECTION"] = fullCollectionName
-	result.Meta["SELECTOR"] = selector
+	result.SetOpType("Delete")
+	result.SetRequestId(header.RequestID)
+	result.SetCollection(fullCollectionName)
+	result.SetSelector(selector)
 	// TODO raw
 	return result
 }
 
-func ParseKillCursors(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseKillCursors(header MsgHeader, r io.Reader) common.Message {
 	_ = MustReadInt32(r)
 	//numberOfCursorIDs := MustReadInt32(r)
-	var cursorIDs []string
+	var cursorIDs []int64
 	for {
 		n := ReadInt64(r)
 		if n != nil {
-			cursorIDs = append(cursorIDs, strconv.FormatInt(*n, 10))
+			cursorIDs = append(cursorIDs, *n)
 			continue
 		}
 		break
@@ -171,14 +167,14 @@ func ParseKillCursors(header MsgHeader, r io.Reader) *common.GenericMessage {
 	//	currentTime(), header.RequestID, numberOfCursorIDs, cursorIDs)
 
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "KillCursors"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["CURSOR_IDS"] = strings.Join(cursorIDs, ",")
+	result.SetOpType("KillCursors")
+	result.SetRequestId(header.RequestID)
+	result.SetCursorIds(cursorIDs)
 	// TODO raw
 	return result
 }
 
-func ParseReply(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseReply(header MsgHeader, r io.Reader) common.Message {
 	flag := MustReadInt32(r)
 	cursorID := ReadInt64(r)
 	startingFrom := MustReadInt32(r)
@@ -201,24 +197,23 @@ func ParseReply(header MsgHeader, r io.Reader) *common.GenericMessage {
 	//)
 
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "Reply"
-	result.Meta["RESPONSE_TO"] = strconv.Itoa(int(header.ResponseTo))
-	result.Meta["FLAG"] = strconv.Itoa(int(flag))
-	result.Meta["CURSOR_ID"] = strconv.FormatInt(*cursorID, 10)
-	result.Meta["STARTING"] = strconv.Itoa(int(startingFrom))
-	result.Meta["RETURN"] = strconv.Itoa(int(numberReturned))
-	body := []byte(docsStr)
-	result.Body = &body
+	result.SetOpType("Reply")
+	result.SetRequestId(header.RequestID)
+	result.SetFlag(flag)
+	result.SetCursorId(*cursorID)
+	result.SetStartingFrom(startingFrom)
+	result.SetNumberToReturn(numberReturned)
+	result.SetMongoBody(docsStr)
 	return result
 }
 
-func ParseMsg(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseMsg(header MsgHeader, r io.Reader) common.Message {
 	msg := ReadCString(r)
 	//fmt.Printf("%s MSG %d %s\n", currentTime(), header.RequestID, msg)
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "Msg"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["MSG"] = msg
+	result.SetOpType("Msg")
+	result.SetRequestId(header.RequestID)
+	result.SetMsg(msg)
 	// TODO raw
 	return result
 }
@@ -245,7 +240,7 @@ func ParseReserved(header MsgHeader, r io.Reader) {
 //	}
 //}
 
-func ParseCommand(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseCommand(header MsgHeader, r io.Reader) common.Message {
 	database := ReadCString(r)
 	commandName := ReadCString(r)
 	metadata := ToJson(ReadDocument(r))
@@ -262,18 +257,17 @@ func ParseCommand(header MsgHeader, r io.Reader) *common.GenericMessage {
 	//)
 
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "Command"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["DATABASE"] = database
-	result.Meta["COMMAND"] = commandName
-	result.Meta["METADATA"] = metadata
-	result.Meta["ARGS"] = commandArgs
-	body := []byte(inputDocs)
-	result.Body = &body
+	result.SetOpType("Command")
+	result.SetRequestId(header.RequestID)
+	result.SetDatabase(database)
+	result.SetCommand(commandName)
+	result.SetMetadata(metadata)
+	result.SetCommandArgs(commandArgs)
+	result.SetMongoBody(inputDocs)
 	return result
 }
 
-func ParseMsgNew(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseMsgNew(header MsgHeader, r io.Reader) common.Message {
 	flags := ToJson(MustReadInt32(r))
 	//fmt.Printf("%s MSG start id:%v flags: %v\n", currentTime(), header.RequestID, flags)
 	var msgs []map[string]interface{}
@@ -324,16 +318,15 @@ func ParseMsgNew(header MsgHeader, r io.Reader) *common.GenericMessage {
 		}
 	}
 
-	body := ToJsonB(msgs)
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "Msg"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["FLAGS"] = flags
-	result.Body = &body
+	result.SetOpType("Msg")
+	result.SetRequestId(header.RequestID)
+	result.SetFlags(flags)
+	result.SetMongoBody(ToJson(msgs))
 	return result
 }
 
-func ParseCommandReply(header MsgHeader, r io.Reader) *common.GenericMessage {
+func ParseCommandReply(header MsgHeader, r io.Reader) common.Message {
 	metadata := ToJson(ReadDocument(r))
 	commandReply := ToJson(ReadDocument(r))
 	outputDocs := ToJson(ReadDocument(r))
@@ -341,13 +334,12 @@ func ParseCommandReply(header MsgHeader, r io.Reader) *common.GenericMessage {
 	//	currentTime(), header.ResponseTo, header.RequestID, metadata, commandReply, outputDocs)
 
 	result := common.NewMongoGenericMessage()
-	result.Meta["OP_TYPE"] = "CommandReply"
-	result.Meta["REQUEST_ID"] = strconv.Itoa(int(header.RequestID))
-	result.Meta["RESPONSE_TO"] = strconv.Itoa(int(header.ResponseTo))
-	result.Meta["METADATA"] = metadata
-	result.Meta["REPLY"] = commandReply
-	body := []byte(outputDocs)
-	result.Body = &body
+	result.SetOpType("CommandReply")
+	result.SetRequestId(header.RequestID)
+	result.SetResponseTo(header.ResponseTo)
+	result.SetMetadata(metadata)
+	result.SetCommandReply(commandReply)
+	result.SetMongoBody(outputDocs)
 	// TODO raw
 	return result
 }
@@ -362,7 +354,7 @@ func readMsgHeader(r io.Reader) (*MsgHeader, error) {
 	return &h, nil
 }
 
-func Parse(r io.Reader) (*common.GenericMessage, error) {
+func Parse(r io.Reader) (common.Message, error) {
 
 	header := MsgHeader{}
 	err := binary.Read(r, binary.LittleEndian, &header)
@@ -373,7 +365,7 @@ func Parse(r io.Reader) (*common.GenericMessage, error) {
 		return nil, err
 	}
 	rd := io.LimitReader(r, int64(header.MessageLength-4*4))
-	var ret *common.GenericMessage
+	var ret common.Message
 	switch header.OpCode {
 	case OP_QUERY:
 		ret = ParseQuery(header, rd)

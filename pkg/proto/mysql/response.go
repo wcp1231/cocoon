@@ -22,13 +22,13 @@ type queryResponse struct {
 	reqCmd    string
 }
 
-func (d *Dissector) popRequest() *common.GenericMessage {
+func (d *Dissector) popRequest() *common.MysqlMessage {
 	ele := d.flyingRequests.Front()
 	d.flyingRequests.Remove(ele)
-	return ele.Value.(*common.GenericMessage)
+	return ele.Value.(*common.MysqlMessage)
 }
 
-func (d *Dissector) readResponse() (*common.GenericMessage, error) {
+func (d *Dissector) readResponse() (common.Message, error) {
 	//fmt.Println("Mysql try read response")
 	message := common.NewMysqlGenericMessage()
 	resp, err := d.readCmdQueryResponse()
@@ -110,7 +110,13 @@ func (d *Dissector) readCmdQueryResponse() (*queryResponse, error) {
 	}
 
 	// ResultSet
-	resultSet, err := proto.UnPackResultSet(resp.reqCmd, d.capabilities, data, d.respStream)
+	var rowMode proto.RowMode
+	if resp.reqCmd == "COM_STMT_EXECUTE" {
+		rowMode = proto.BinaryRowMode
+	} else {
+		rowMode = proto.TextRowMode
+	}
+	resultSet, err := proto.UnPackResultSet(rowMode, d.capabilities, data, d.respStream)
 	if err != nil {
 		return nil, err
 	}

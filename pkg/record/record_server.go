@@ -27,7 +27,7 @@ func NewRecordService(logger *zap.Logger) *RecordService {
 	}
 }
 
-func (r *RecordService) RecordRequest(request *common.GenericMessage) error {
+func (r *RecordService) RecordRequest(request common.Message) error {
 	record := fromGenericMessage(request, true)
 	data, err := json.Marshal(record)
 	if err != nil {
@@ -37,8 +37,8 @@ func (r *RecordService) RecordRequest(request *common.GenericMessage) error {
 	return nil
 }
 
-func (r *RecordService) RecordResponse(request, response *common.GenericMessage) error {
-	response.Id = request.Id
+func (r *RecordService) RecordResponse(request, response common.Message) error {
+	response.SetId(request.ID())
 	record := fromGenericMessage(response, false)
 	data, err := json.Marshal(record)
 	if err != nil {

@@ -8,17 +8,16 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 type Dissector struct {
 	reqReader  *bufio.Reader
 	respReader *bufio.Reader
-	requestC   chan *common.GenericMessage
-	responseC  chan *common.GenericMessage
+	requestC   chan common.Message
+	responseC  chan common.Message
 }
 
-func NewRequestDissector(reqC, respC chan *common.GenericMessage) *Dissector {
+func NewRequestDissector(reqC, respC chan common.Message) *Dissector {
 	return &Dissector{
 		requestC:  reqC,
 		responseC: respC,
@@ -63,19 +62,16 @@ func (d *Dissector) dissectRequest() error {
 		// TODO response 500?
 	}
 
-	for k, vv := range request.Header {
-		message.Header[k] = strings.Join(vv, ";")
-	}
-
-	message.Meta["HOST"] = request.Host
-	message.Meta["METHOD"] = request.Method
-	message.Meta["URL"] = request.URL.String()
+	message.SetHttpHeader(request.Header)
+	message.SetHost(request.Host)
+	message.SetMethod(request.Method)
+	message.SetUrl(request.URL.String())
 
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		fmt.Println("Http request read body error", err.Error())
 	}
-	message.Body = &body
+	message.SetBody(body)
 	request.Body = io.NopCloser(bytes.NewBuffer(body))
 
 	buf := new(bytes.Buffer)
@@ -105,18 +101,15 @@ func (d *Dissector) dissectResponse() error {
 		// TODO response 500?
 	}
 
-	for k, vv := range response.Header {
-		message.Header[k] = strings.Join(vv, ";;")
-	}
-
-	message.Meta["STATUS"] = response.Status
-	message.Meta["PROTO"] = response.Proto
+	message.SetHttpHeader(response.Header)
+	message.SetStatusCode(response.StatusCode)
+	message.SetProto(response.Proto)
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Http request read body error", err.Error())
 	}
-	message.Body = &body
+	message.SetBody(body)
 	response.Body = io.NopCloser(bytes.NewBuffer(body))
 
 	buf := new(bytes.Buffer)

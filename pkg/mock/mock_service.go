@@ -23,7 +23,7 @@ func NewMockService(logger *zap.Logger) *MockService {
 	}
 }
 
-func (m *MockService) Mock(proto string, msg *common.GenericMessage) *common.MockResult {
+func (m *MockService) Mock(proto string, msg common.Message) *common.MockResult {
 	protoImposter, exist := m.importers[proto]
 	if !exist {
 		result := &common.MockResult{

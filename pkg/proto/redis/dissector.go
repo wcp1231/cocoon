@@ -9,11 +9,11 @@ import (
 type Dissector struct {
 	reqReader  *RESPReader
 	respReader *RESPReader
-	requestC   chan *common.GenericMessage
-	responseC  chan *common.GenericMessage
+	requestC   chan common.Message
+	responseC  chan common.Message
 }
 
-func NewRequestDissector(reqC, respC chan *common.GenericMessage) *Dissector {
+func NewRequestDissector(reqC, respC chan common.Message) *Dissector {
 	return &Dissector{
 		requestC:  reqC,
 		responseC: respC,
@@ -51,10 +51,9 @@ func (d *Dissector) dissectRequest() error {
 	}
 
 	request := object.GetRequest()
-	message.Meta["CMD"] = request.Cmd
-	message.Meta["KEY"] = request.Key
-	body := object.Pretty()
-	message.Body = &body
+	message.SetCmd(request.Cmd)
+	message.SetKey(request.Key)
+	message.SetRedisPayload(object.Pretty())
 	message.Raw = &request.Raw
 
 	message.CaptureNow()
@@ -72,8 +71,7 @@ func (d *Dissector) dissectResponse() error {
 		return err
 	}
 
-	body := object.Pretty()
-	message.Body = &body
+	message.SetRedisPayload(object.Pretty())
 	message.Raw = &object.Raw
 	message.CaptureNow()
 	d.responseC <- message

@@ -11,11 +11,11 @@ import (
 type Dissector struct {
 	reqReader  *bufio.Reader
 	respReader *bufio.Reader
-	requestC   chan *common.GenericMessage
-	responseC  chan *common.GenericMessage
+	requestC   chan common.Message
+	responseC  chan common.Message
 }
 
-func NewRequestDissector(reqC, respC chan *common.GenericMessage) *Dissector {
+func NewRequestDissector(reqC, respC chan common.Message) *Dissector {
 	return &Dissector{
 		requestC:  reqC,
 		responseC: respC,
@@ -60,7 +60,7 @@ func (d *Dissector) dissectRequest() error {
 	}
 
 	raw := buf.Bytes()
-	message.Raw = &raw
+	message.SetRaw(&raw)
 
 	message.CaptureNow()
 	d.requestC <- message
@@ -81,7 +81,7 @@ func (d *Dissector) dissectResponse() error {
 	}
 
 	raw := buf.Bytes()
-	message.Raw = &raw
+	message.SetRaw(&raw)
 	message.CaptureNow()
 	d.responseC <- message
 	return nil

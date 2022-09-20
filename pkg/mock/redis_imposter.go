@@ -57,15 +57,16 @@ func encodeRedisMockData(resp redisResponseMockConfig) []byte {
 	return buf.Bytes()
 }
 
-func (h *RedisRequestMatcher) Match(req *common.GenericMessage) bool {
+func (h *RedisRequestMatcher) Match(r common.Message) bool {
+	req := r.(*common.RedisMessage)
 	if h.cmd != nil {
-		if !h.cmd.Match(req.Meta["CMD"]) {
+		if !h.cmd.Match(req.GetCmd()) {
 			return false
 		}
 	}
 
 	if h.key != nil {
-		if !h.key.Match(req.Meta["KEY"]) {
+		if !h.key.Match(req.GetKey()) {
 			return false
 		}
 	}
@@ -73,9 +74,9 @@ func (h *RedisRequestMatcher) Match(req *common.GenericMessage) bool {
 	return true
 }
 
-func (h *RedisRequestMatcher) Data() *common.GenericMessage {
+func (h *RedisRequestMatcher) Data() common.Message {
 	message := common.NewRedisGenericMessage()
-	message.Meta["MOCK"] = "true"
+	message.SetMock()
 	message.Body = &h.respBody
 	message.Raw = &h.respBody
 	return message

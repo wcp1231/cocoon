@@ -15,88 +15,13 @@ const (
 	BinaryRowMode
 )
 
-// NewSimpleRows creates BinaryRows.
-func NewSimpleRows(stream *packet.Stream) *SimpleRows {
-	binaryRows := &SimpleRows{}
-	binaryRows.c = stream
-	binaryRows.buffer = NewBuffer(8)
-	return binaryRows
-}
-
-type SimpleRows struct {
-	c            *packet.Stream
-	end          bool
-	err          *ERR
-	data         []byte
-	bytes        int
-	RowsAffected uint64
-	InsertID     uint64
-	buffer       *Buffer
-	Fields       []*Field
-}
-
-// Next implements the Rows interface.
-// http://dev.mysql.com/doc/internals/en/com-query-response.html#packet-ProtocolText::ResultsetRow
-func (r *SimpleRows) Next() bool {
-
-	if r.end {
-		return false
-	}
-
-	// if Fields count is 0
-	// the packet is OK-Packet without Resultset.
-	if len(r.Fields) == 0 {
-		r.end = true
-		return false
-	}
-
-	var err error
-	var pkt *packet.Packet
-	if pkt, err = r.c.NextPacket(); err != nil {
-		r.err = &ERR{InternalError: err}
-		r.end = true
-		return false
-	}
-	r.data = pkt.Datas
-
-	switch r.data[0] {
-	case EOF_PACKET:
-		// This packet may be one of two kinds:
-		// - an EOF packet,
-		// - an OK packet with an EOF header if
-		// sqldb.CLIENT_DEPRECATE_EOF is set.
-		r.end = true
-		return false
-
-	case ERR_PACKET:
-		r.err = UnPackERR(r.data)
-		r.end = true
-		return false
-	}
-	r.buffer.Reset(r.data)
-	return true
-}
-
-// RowValues implements the Rows interface.
-// https://dev.mysql.com/doc/internals/en/com-query-response.html#packet-ProtocolText::ResultsetRow
-func (r *SimpleRows) RowValues() ([]byte, error) {
-	if r.Fields == nil {
-		return nil, errors.New("rows.Fields is NIL")
-	}
-	data := r.buffer.Datas()
-	return data, nil
-}
-
 // Rows presents row cursor interface.
 type Rows interface {
 	Next() bool
 	Close() *ERR
 	Datas() []byte
 	Bytes() int
-	//RowsAffected() uint64
-	//LastInsertID() uint64
 	LastError() *ERR
-	//Fields() []*Field
 	RowValues() ([]Value, error)
 }
 
@@ -203,25 +128,10 @@ func (r *BaseRows) Datas() []byte {
 	return r.buffer.Datas()
 }
 
-// Fields implements the Rows interface.
-//func (r *BaseRows) Fields() []*Field {
-//	return r.Fields
-//}
-
 // Bytes returns all the memory usage which read by this row cursor.
 func (r *BaseRows) Bytes() int {
 	return r.bytes
 }
-
-// RowsAffected implements the Rows interface.
-//func (r *BaseRows) RowsAffected() uint64 {
-//	return r.RowsAffected
-//}
-
-// LastInsertID implements the Rows interface.
-//func (r *BaseRows) LastInsertID() uint64 {
-//	return r.InsertID
-//}
 
 // LastError implements the Rows interface.
 func (r *BaseRows) LastError() *ERR {

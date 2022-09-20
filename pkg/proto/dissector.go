@@ -10,7 +10,7 @@ import (
 	"cocoon/pkg/proto/redis"
 )
 
-func NewRequestDissector(protocol *common.Protocol, reqC, respC chan *common.GenericMessage) api.ClientDissector {
+func NewRequestDissector(protocol *common.Protocol, reqC, respC chan common.Message) api.ClientDissector {
 	switch protocol {
 	case common.PROTOCOL_HTTP:
 		return http.NewRequestDissector(reqC, respC)
@@ -24,6 +24,6 @@ func NewRequestDissector(protocol *common.Protocol, reqC, respC chan *common.Gen
 	return nil
 }
 
-func NewMysqlDissector(reqC, respC chan *common.GenericMessage) *mysql.Dissector {
+func NewMysqlDissector(reqC, respC chan common.Message) *mysql.Dissector {
 	return mysql.NewRequestDissector(reqC, respC)
 }
