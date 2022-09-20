@@ -12,7 +12,8 @@ import (
 )
 
 type SampleApp struct {
-	db *sql.DB
+	db   *sql.DB
+	http *http.Client
 }
 
 func responseErr(w http.ResponseWriter, err error) {
@@ -35,12 +36,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	httpClient, err := newHttpClient("127.0.0.1:7820", "", "")
+	if err != nil {
+		panic(err)
+	}
 	mysqlUrl := os.Getenv("mysql")
 	db := connectMysql(mysqlUrl, socksProxy(dialer))
 
 	rand.Seed(time.Now().UnixNano())
-	app := SampleApp{db: db}
+	app := SampleApp{db: db, http: httpClient}
 
+	http.HandleFunc("/http/get", app.httpGet)
+	http.HandleFunc("/http/post", app.httpPost)
 	http.HandleFunc("/mysql/select", app.mysqlSelect)
 	http.HandleFunc("/mysql/insert", app.mysqlInsert)
 	http.HandleFunc("/mysql/update", app.mysqlUpdate)
