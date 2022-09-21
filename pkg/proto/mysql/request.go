@@ -17,9 +17,12 @@ func (d *Dissector) readRequest() (common.Message, error) {
 	}
 	raw := pkt.Raw()
 	data := pkt.Datas
-	message := common.NewMysqlGenericMessage()
+	message := NewMysqlGenericMessage()
 	message.Raw = &raw
-	message.Meta["OP_TYPE"] = proto.CommandString(data[0])
+	message.SetOpType(proto.CommandString(data[0]))
+	if len(data) > 1 {
+		message.SetQuery(string(removeSpaces.ReplaceAll(data[1:], []byte{' '})))
+	}
 
 	switch data[0] {
 	case proto.COM_QUIT:
