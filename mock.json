@@ -17,10 +17,10 @@
     {
       "request": {
         "cmd": {
-          "equals": "GET"
+          "equals": "\"GET\""
         },
         "key": {
-          "equals": "user:u:61f170000000000000000000"
+          "equals": "\"test_11\""
         }
       },
       "response": {
@@ -31,10 +31,10 @@
     {
       "request": {
         "cmd": {
-          "equals": "GET"
+          "equals": "\"GET\""
         },
         "key": {
-          "equals": "user:61f170000000000000000000"
+          "equals": "\"user:61f170000000000000000000\""
         }
       },
       "response": {
@@ -45,10 +45,10 @@
     {
       "request": {
         "cmd": {
-          "equals": "GET"
+          "equals": "\"GET\""
         },
         "key": {
-          "equals": "user:61f170000000000000000000"
+          "equals": "\"user:61f170000000000000000000\""
         }
       },
       "response": {

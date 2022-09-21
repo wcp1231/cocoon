@@ -34,7 +34,7 @@ func (d *DubboMessage) SetHeartbeat() {
 
 func (d *DubboMessage) IsHeartbeat() bool {
 	hb, exist := d.Payload[DUBBO_HEARTBEAT_KEY]
-	return !exist || hb.(bool)
+	return exist && hb.(bool)
 }
 
 func (d *DubboMessage) SetDubboVersion(dubboVersion string) {

@@ -3,6 +3,7 @@ package mock
 import (
 	"bytes"
 	"cocoon/pkg/model/common"
+	"cocoon/pkg/proto/redis"
 	"fmt"
 )
 
@@ -58,7 +59,7 @@ func encodeRedisMockData(resp redisResponseMockConfig) []byte {
 }
 
 func (h *RedisRequestMatcher) Match(r common.Message) bool {
-	req := r.(*common.RedisMessage)
+	req := r.(*redis.RedisMessage)
 	if h.cmd != nil {
 		if !h.cmd.Match(req.GetCmd()) {
 			return false
@@ -75,7 +76,7 @@ func (h *RedisRequestMatcher) Match(r common.Message) bool {
 }
 
 func (h *RedisRequestMatcher) Data() common.Message {
-	message := common.NewRedisGenericMessage()
+	message := redis.NewRedisGenericMessage()
 	message.SetMock()
 	message.Body = &h.respBody
 	message.Raw = &h.respBody

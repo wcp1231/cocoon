@@ -41,7 +41,7 @@ func (d *Dissector) StartResponseDissect(reader *bufio.Reader) {
 }
 
 func (d *Dissector) dissectRequest() error {
-	message := common.NewRedisGenericMessage()
+	message := NewRedisGenericMessage()
 
 	object, err := d.reqReader.ReadObject()
 	if err != nil {
@@ -50,19 +50,25 @@ func (d *Dissector) dissectRequest() error {
 		return err
 	}
 
-	request := object.GetRequest()
-	message.SetCmd(request.Cmd)
-	message.SetKey(request.Key)
-	message.SetRedisPayload(object.Pretty())
-	message.Raw = &request.Raw
+	message.SetRequestCmd(object.Pretty())
+	reqCmds := object.(*RedisArray)
+	message.SetCmd(reqCmds.Items[0].Pretty())
+	if reqCmds.Len > 1 {
+		message.SetKey(reqCmds.Items[1].Pretty())
+	}
+	if message.GetCmd() == `"PING"` {
+		message.SetHeartbeat()
+	}
 
+	raw := object.Raw()
+	message.SetRaw(&raw)
 	message.CaptureNow()
 	d.requestC <- message
 	return nil
 }
 
 func (d *Dissector) dissectResponse() error {
-	message := common.NewRedisGenericMessage()
+	message := NewRedisGenericMessage()
 
 	object, err := d.respReader.ReadObject()
 	if err != nil {
@@ -71,8 +77,9 @@ func (d *Dissector) dissectResponse() error {
 		return err
 	}
 
-	message.SetRedisPayload(object.Pretty())
-	message.Raw = &object.Raw
+	message.SetResponseObj(object.Pretty())
+	raw := object.Raw()
+	message.SetRaw(&raw)
 	message.CaptureNow()
 	d.responseC <- message
 	return nil

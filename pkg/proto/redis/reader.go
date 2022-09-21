@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"strconv"
 )
 
@@ -18,90 +17,116 @@ const (
 	EMPTY_LINE    = '\r'
 )
 
-// TODO RESP 3
-
 var (
 	ErrInvalidSyntax = errors.New("resp: invalid syntax")
 )
 
-type RedisRequest struct {
-	Cmd  string
-	Key  string
-	Body []byte
-	Raw  []byte
+type RedisObject interface {
+	// 返回原始 bytes 数据
+	Raw() []byte
+	// hunmen readable
+	Pretty() string
 }
 
-type RedisResponse struct {
-	Body []byte
-	Raw  []byte
+type RedisSimpleString struct {
+	String string
 }
 
-type RedisObject struct {
-	Type  int32
-	Data  string
-	Count int
-	Array []*RedisObject
-	Raw   []byte
+type RedisInteger struct {
+	Integer int64
 }
 
-func (r *RedisObject) Pretty() []byte {
-	if r.Type != ARRAY {
-		return []byte(r.Data)
-	}
-	buf := new(bytes.Buffer)
-	buf.WriteByte('[')
-	for _, item := range r.Array {
-		buf.Write(item.Pretty())
-		buf.WriteByte(' ')
-	}
-	buf.WriteByte(']')
+type RedisError struct {
+	Error string
+}
+
+type RedisBulkString struct {
+	Len    int64
+	String string
+}
+
+type RedisArray struct {
+	Len   int
+	Items []RedisObject
+}
+
+func (r *RedisSimpleString) Raw() []byte {
+	buf := bytes.Buffer{}
+	buf.WriteByte(SIMPLE_STRING)
+	buf.WriteString(r.String)
+	buf.WriteString("\r\n")
 	return buf.Bytes()
 }
+func (r *RedisSimpleString) Pretty() string {
+	return fmt.Sprintf(`"%s"`, r.String)
+}
 
-func (r *RedisObject) GetRequest() *RedisRequest {
-	if r.Type != ARRAY {
-		return nil
+func (r *RedisInteger) Raw() []byte {
+	buf := bytes.Buffer{}
+	buf.WriteByte(INTEGER)
+	buf.WriteString(strconv.FormatInt(r.Integer, 10))
+	buf.WriteString("\r\n")
+	return buf.Bytes()
+}
+func (r *RedisInteger) Pretty() string {
+	return strconv.FormatInt(r.Integer, 10)
+}
+
+func (r *RedisError) Raw() []byte {
+	buf := bytes.Buffer{}
+	buf.WriteByte(ERROR)
+	buf.WriteString(r.Error)
+	buf.WriteString("\r\n")
+	return buf.Bytes()
+}
+func (r *RedisError) Pretty() string {
+	return fmt.Sprintf("-%s", r.Error)
+}
+
+func (r *RedisBulkString) Raw() []byte {
+	buf := bytes.Buffer{}
+	buf.WriteByte(BULK_STRING)
+	if r.Len == -1 {
+		buf.WriteString("-1\r\n")
+		return buf.Bytes()
 	}
-	req := &RedisRequest{}
-	req.Cmd = r.Array[0].Data
-	// TODO check
-	if r.Count > 1 {
-		req.Key = r.Array[1].Data
+	buf.WriteString(fmt.Sprintf("%d\r\n%s\r\n", r.Len, r.String))
+	return buf.Bytes()
+}
+func (r *RedisBulkString) Pretty() string {
+	if r.Len < 0 {
+		return "nil"
 	}
-	req.Body = r.Pretty()
-	req.Raw = r.Raw
-	return req
+	return fmt.Sprintf(`"%s"`, r.String)
 }
 
-// GetResponse TODO
-func (r *RedisObject) GetResponse() *RedisResponse {
-	req := &RedisResponse{}
-	// TODO check
-	req.Body = r.Pretty()
-	req.Raw = r.Raw
-	return req
+func (r *RedisArray) Raw() []byte {
+	buf := bytes.Buffer{}
+	buf.WriteByte(ARRAY)
+	if r.Len == -1 {
+		buf.WriteString("-1\r\n")
+		return buf.Bytes()
+	}
+	buf.WriteString(fmt.Sprintf("%d\r\n", r.Len))
+	for _, item := range r.Items {
+		buf.Write(item.Raw())
+	}
+	return buf.Bytes()
 }
-
-func NewBulkString() *RedisObject {
-	object := &RedisObject{}
-	object.Type = BULK_STRING
-	return object
-}
-
-func NewArray(count int) *RedisObject {
-	object := &RedisObject{}
-	object.Type = ARRAY
-	object.Count = count
-	object.Array = make([]*RedisObject, count)
-	return object
-}
-
-func NewStringOrIntegerOrError(t int32, line []byte) *RedisObject {
-	object := &RedisObject{}
-	object.Type = t
-	object.Data = string(line[1 : len(line)-2])
-	object.Raw = line
-	return object
+func (r *RedisArray) Pretty() string {
+	if r.Len < 0 {
+		return "nil"
+	}
+	buf := bytes.Buffer{}
+	buf.WriteByte('[')
+	for i, item := range r.Items {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(item.Pretty())
+	}
+	buf.WriteByte(']')
+	return buf.String()
 }
 
 type RESPReader struct {
@@ -114,18 +139,18 @@ func NewReader(reader *bufio.Reader) *RESPReader {
 	}
 }
 
-func (r *RESPReader) ReadObject() (*RedisObject, error) {
+func (r *RESPReader) ReadObject() (RedisObject, error) {
 	line, err := r.readLine()
 	if err != nil {
 		return nil, err
 	}
 	switch line[0] {
 	case SIMPLE_STRING:
-		return NewStringOrIntegerOrError(SIMPLE_STRING, line), nil
+		return r.readSimpleString(line)
 	case INTEGER:
-		return NewStringOrIntegerOrError(INTEGER, line), nil
+		return r.readInteger(line)
 	case ERROR:
-		return NewStringOrIntegerOrError(ERROR, line), nil
+		return r.readError(line)
 	case BULK_STRING:
 		return r.readBulkString(line)
 	case ARRAY:
@@ -153,45 +178,61 @@ func (r *RESPReader) readLine() (line []byte, err error) {
 	}
 }
 
-func (r *RESPReader) readBulkString(line []byte) (*RedisObject, error) {
-	object := NewBulkString()
+func (r *RESPReader) getCount(line []byte) (int64, error) {
+	end := bytes.IndexByte(line, '\r')
+	return strconv.ParseInt(string(line[1:end]), 10, 64)
+}
+
+func (r *RESPReader) readSimpleString(line []byte) (RedisObject, error) {
+	object := &RedisSimpleString{}
+	object.String = string(line[1 : len(line)-2])
+	return object, nil
+}
+
+func (r *RESPReader) readInteger(line []byte) (RedisObject, error) {
+	object := &RedisInteger{}
+	var err error
+	object.Integer, err = strconv.ParseInt(string(line[1:len(line)-2]), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return object, nil
+}
+
+func (r *RESPReader) readError(line []byte) (RedisObject, error) {
+	object := &RedisError{}
+	object.Error = string(line[1 : len(line)-2])
+	return object, nil
+}
+
+func (r *RESPReader) readBulkString(line []byte) (RedisObject, error) {
+	object := &RedisBulkString{}
 	count, err := r.getCount(line)
 	if err != nil {
 		return nil, err
 	}
+	object.Len = count
 	if count == -1 {
-		// TODO handle nil
-		object.Raw = make([]byte, len(line))
-		copy(object.Raw, line)
 		return object, nil
 	}
-	raw := make([]byte, len(line)+count+2)
-	copy(raw, line)
-	data := make([]byte, count+2)
-	_, err = io.ReadFull(r, data)
+	stringLine, err := r.readLine()
 	if err != nil {
 		return nil, err
 	}
-	copy(raw[len(line):], data)
-	object.Data = string(data[:len(data)-2])
-	object.Raw = raw
+	object.String = string(stringLine[:len(stringLine)-2])
 	return object, nil
 }
 
-func (r *RESPReader) getCount(line []byte) (int, error) {
-	end := bytes.IndexByte(line, '\r')
-	return strconv.Atoi(string(line[1:end]))
-}
-
-func (r *RESPReader) readArray(line []byte) (*RedisObject, error) {
+func (r *RESPReader) readArray(line []byte) (RedisObject, error) {
 	// Get number of array elements.
 	count, err := r.getCount(line)
 	if err != nil {
 		return nil, err
 	}
-	object := NewArray(count)
+	object := &RedisArray{}
+	object.Len = int(count)
 	// Read `count` number of RESP objects in the array.
-	for i := 0; i < count; i++ {
+	for i := 0; i < object.Len; i++ {
 		item, err := r.ReadObject()
 		if err != nil {
 			return nil, err
@@ -199,10 +240,7 @@ func (r *RESPReader) readArray(line []byte) (*RedisObject, error) {
 		if item == nil {
 			continue
 		}
-		line = append(line, item.Raw...)
-		object.Array[i] = item
+		object.Items = append(object.Items, item)
 	}
-	object.Raw = make([]byte, len(line))
-	copy(object.Raw, line)
 	return object, nil
 }
