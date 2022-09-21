@@ -1,6 +1,7 @@
-package common
+package http
 
 import (
+	"cocoon/pkg/model/common"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,12 +18,12 @@ const (
 )
 
 type HTTPMessage struct {
-	GenericMessage
+	common.GenericMessage
 }
 
 func NewHTTPGenericMessage() *HTTPMessage {
 	return &HTTPMessage{
-		NewGenericMessage(PROTOCOL_HTTP.Name),
+		common.NewGenericMessage(common.PROTOCOL_HTTP.Name),
 	}
 }
 

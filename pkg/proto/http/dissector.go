@@ -49,7 +49,7 @@ func (d *Dissector) StartResponseDissect(reader *bufio.Reader) {
 }
 
 func (d *Dissector) dissectRequest() error {
-	message := common.NewHTTPGenericMessage()
+	message := NewHTTPGenericMessage()
 
 	request, err := http.ReadRequest(d.reqReader)
 	if err != nil {
@@ -88,7 +88,7 @@ func (d *Dissector) dissectRequest() error {
 }
 
 func (d *Dissector) dissectResponse() error {
-	message := common.NewHTTPGenericMessage()
+	message := NewHTTPGenericMessage()
 
 	response, err := http.ReadResponse(d.respReader, nil)
 	if err != nil {

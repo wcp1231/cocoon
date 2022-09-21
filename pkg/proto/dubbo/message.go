@@ -1,13 +1,14 @@
-package common
+package dubbo
 
 import (
+	"cocoon/pkg/model/common"
 	"encoding/json"
 	"fmt"
 )
 
 const (
 	DUBBO_HEARTBEAT_KEY       = "DUBBO_HEARTBEAT"
-	DUBBO_VERSION_KEY         = "DUBBO_VERSION"
+	DUBBO_MSG_VERSION_KEY     = "DUBBO_VERSION"
 	DUBBO_SERVICE_VERSION_KEY = "DUBBO_SERVICE_VERSION"
 	DUBBO_METHOD_KEY          = "DUBBO_METHOD"
 	DUBBO_TARGET_KEY          = "DUBBO_TARGET"
@@ -18,12 +19,12 @@ const (
 )
 
 type DubboMessage struct {
-	GenericMessage
+	common.GenericMessage
 }
 
 func NewDubboGenericMessage() *DubboMessage {
 	return &DubboMessage{
-		NewGenericMessage(PROTOCOL_DUBBO.Name),
+		common.NewGenericMessage(common.PROTOCOL_DUBBO.Name),
 	}
 }
 
@@ -39,11 +40,11 @@ func (d *DubboMessage) IsHeartbeat() bool {
 
 func (d *DubboMessage) SetDubboVersion(dubboVersion string) {
 	d.Header["dubboVersion"] = dubboVersion
-	d.Payload[DUBBO_VERSION_KEY] = dubboVersion
+	d.Payload[DUBBO_MSG_VERSION_KEY] = dubboVersion
 }
 
 func (d *DubboMessage) GetDubboVersion() string {
-	return d.Payload[DUBBO_VERSION_KEY].(string)
+	return d.Payload[DUBBO_MSG_VERSION_KEY].(string)
 }
 
 func (d *DubboMessage) SetServiceVersion(serviceVersion string) {

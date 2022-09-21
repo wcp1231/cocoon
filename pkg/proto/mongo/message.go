@@ -1,6 +1,7 @@
-package common
+package mongo
 
 import (
+	"cocoon/pkg/model/common"
 	"strconv"
 	"strings"
 )
@@ -29,12 +30,12 @@ const (
 )
 
 type MongoMessage struct {
-	GenericMessage
+	common.GenericMessage
 }
 
 func NewMongoGenericMessage() *MongoMessage {
 	return &MongoMessage{
-		NewGenericMessage(PROTOCOL_MONGO.Name),
+		common.NewGenericMessage(common.PROTOCOL_MONGO.Name),
 	}
 }
 

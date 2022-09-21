@@ -22,7 +22,7 @@ func ReadPacket(reader *bufio.Reader) (common.Message, error) {
 		return nil, err
 	}
 
-	message := common.NewDubboGenericMessage()
+	message := NewDubboGenericMessage()
 	if header.isHeartbeat() {
 		message.SetHeartbeat()
 	} else if header.isRequest() {

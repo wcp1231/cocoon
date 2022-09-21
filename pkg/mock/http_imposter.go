@@ -3,6 +3,7 @@ package mock
 import (
 	"bytes"
 	"cocoon/pkg/model/common"
+	httpProto "cocoon/pkg/proto/http"
 	"io"
 	"net/http"
 	"os"
@@ -74,7 +75,7 @@ func newFieldMatcher(field *fieldMockConfig) FieldMatcher {
 }
 
 func (h *HttpRequestMatcher) Match(r common.Message) bool {
-	req := r.(*common.HTTPMessage)
+	req := r.(*httpProto.HTTPMessage)
 	if h.method != nil {
 		method := req.Meta["METHOD"]
 		if !h.method.Match(method) {
@@ -113,7 +114,7 @@ func (h *HttpRequestMatcher) Data() common.Message {
 	response.ProtoMajor = 1
 	response.ProtoMinor = 1
 
-	message := common.NewHTTPGenericMessage()
+	message := httpProto.NewHTTPGenericMessage()
 	message.SetMock()
 	message.Meta["STATUS"] = h.status
 	for k, v := range h.respHeader {

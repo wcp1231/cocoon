@@ -58,7 +58,7 @@ func ParseQuery(header MsgHeader, r io.Reader) common.Message {
 	queryJson := ToJson(query)
 	selector := ToJson(ReadDocument(r))
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("Query")
 	result.SetRequestId(header.RequestID)
 	result.SetFlag(flag)
@@ -89,7 +89,7 @@ func ParseInsert(header MsgHeader, r io.Reader) common.Message {
 	//fmt.Printf("%s INSERT id:%d coll:%s flag:%b docs:%v\n",
 	//	currentTime(), header.RequestID, fullCollectionName, flag, docsStr)
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("Insert")
 	result.SetRequestId(header.RequestID)
 	result.SetFlag(flag)
@@ -107,7 +107,7 @@ func ParseUpdate(header MsgHeader, r io.Reader) common.Message {
 	//fmt.Printf("%s UPDATE id:%d coll:%s flag:%b sel:%v update:%v\n",
 	//	currentTime(), header.RequestID, fullCollectionName, flag, selector, update)
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("Update")
 	result.SetRequestId(header.RequestID)
 	result.SetFlag(flag)
@@ -125,7 +125,7 @@ func ParseGetMore(header MsgHeader, r io.Reader) common.Message {
 	//fmt.Printf("%s GETMORE id:%d coll:%s toret:%d curID:%d\n",
 	//	currentTime(), header.RequestID, fullCollectionName, numberToReturn, cursorID)
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("GetMore")
 	result.SetRequestId(header.RequestID)
 	result.SetCollection(fullCollectionName)
@@ -142,7 +142,7 @@ func ParseDelete(header MsgHeader, r io.Reader) common.Message {
 	selector := ToJson(ReadDocument(r))
 	//fmt.Printf("%s DELETE id:%d coll:%s flag:%b sel:%v \n",
 	//	currentTime(), header.RequestID, fullCollectionName, flag, selector)
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("Delete")
 	result.SetRequestId(header.RequestID)
 	result.SetCollection(fullCollectionName)
@@ -166,7 +166,7 @@ func ParseKillCursors(header MsgHeader, r io.Reader) common.Message {
 	//fmt.Printf("%s KILLCURSORS id:%d numCurID:%d curIDs:%s\n",
 	//	currentTime(), header.RequestID, numberOfCursorIDs, cursorIDs)
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("KillCursors")
 	result.SetRequestId(header.RequestID)
 	result.SetCursorIds(cursorIDs)
@@ -196,7 +196,7 @@ func ParseReply(header MsgHeader, r io.Reader) common.Message {
 	//	docsStr,
 	//)
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("Reply")
 	result.SetRequestId(header.RequestID)
 	result.SetFlag(flag)
@@ -210,7 +210,7 @@ func ParseReply(header MsgHeader, r io.Reader) common.Message {
 func ParseMsg(header MsgHeader, r io.Reader) common.Message {
 	msg := ReadCString(r)
 	//fmt.Printf("%s MSG %d %s\n", currentTime(), header.RequestID, msg)
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("Msg")
 	result.SetRequestId(header.RequestID)
 	result.SetMsg(msg)
@@ -256,7 +256,7 @@ func ParseCommand(header MsgHeader, r io.Reader) common.Message {
 	//	inputDocs,
 	//)
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("Command")
 	result.SetRequestId(header.RequestID)
 	result.SetDatabase(database)
@@ -318,7 +318,7 @@ func ParseMsgNew(header MsgHeader, r io.Reader) common.Message {
 		}
 	}
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("Msg")
 	result.SetRequestId(header.RequestID)
 	result.SetFlags(flags)
@@ -333,7 +333,7 @@ func ParseCommandReply(header MsgHeader, r io.Reader) common.Message {
 	//fmt.Printf("%s COMMANDREPLY to:%d id:%v meta:%v cmdReply:%v outputDocs:%v\n",
 	//	currentTime(), header.ResponseTo, header.RequestID, metadata, commandReply, outputDocs)
 
-	result := common.NewMongoGenericMessage()
+	result := NewMongoGenericMessage()
 	result.SetOpType("CommandReply")
 	result.SetRequestId(header.RequestID)
 	result.SetResponseTo(header.ResponseTo)
