@@ -26,6 +26,8 @@ type RedisObject interface {
 	Raw() []byte
 	// hunmen readable
 	Pretty() string
+	// raw text
+	Text() string
 }
 
 type RedisSimpleString struct {
@@ -60,6 +62,9 @@ func (r *RedisSimpleString) Raw() []byte {
 func (r *RedisSimpleString) Pretty() string {
 	return fmt.Sprintf(`"%s"`, r.String)
 }
+func (r *RedisSimpleString) Text() string {
+	return r.String
+}
 
 func (r *RedisInteger) Raw() []byte {
 	buf := bytes.Buffer{}
@@ -69,6 +74,9 @@ func (r *RedisInteger) Raw() []byte {
 	return buf.Bytes()
 }
 func (r *RedisInteger) Pretty() string {
+	return r.Text()
+}
+func (r *RedisInteger) Text() string {
 	return strconv.FormatInt(r.Integer, 10)
 }
 
@@ -81,6 +89,9 @@ func (r *RedisError) Raw() []byte {
 }
 func (r *RedisError) Pretty() string {
 	return fmt.Sprintf("-%s", r.Error)
+}
+func (r *RedisError) Text() string {
+	return r.Error
 }
 
 func (r *RedisBulkString) Raw() []byte {
@@ -98,6 +109,9 @@ func (r *RedisBulkString) Pretty() string {
 		return "nil"
 	}
 	return fmt.Sprintf(`"%s"`, r.String)
+}
+func (r *RedisBulkString) Text() string {
+	return r.String
 }
 
 func (r *RedisArray) Raw() []byte {
@@ -127,6 +141,9 @@ func (r *RedisArray) Pretty() string {
 	}
 	buf.WriteByte(']')
 	return buf.String()
+}
+func (r *RedisArray) Text() string {
+	return ""
 }
 
 type RESPReader struct {

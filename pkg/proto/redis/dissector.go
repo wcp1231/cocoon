@@ -56,9 +56,9 @@ func (d *Dissector) dissectRequest() error {
 
 	message.SetRequestCmd(object.Pretty())
 	reqCmds := object.(*RedisArray)
-	message.SetCmd(reqCmds.Items[0].Pretty())
+	message.SetCmd(reqCmds.Items[0].Text())
 	if reqCmds.Len > 1 {
-		message.SetKey(reqCmds.Items[1].Pretty())
+		message.SetKey(reqCmds.Items[1].Text())
 	}
 	if message.GetCmd() == `"PING"` {
 		message.SetHeartbeat()
