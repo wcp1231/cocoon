@@ -222,7 +222,7 @@ func (w *resultSetWriter) packTextRow(row []Value) []byte {
 		if value.Type == Null {
 			buf.WriteLenEncodeNUL()
 		} else {
-			buf.WriteLenEncodeBytes(value.Value)
+			buf.WriteLenEncodeString(value.Value)
 		}
 	}
 	return buf.Datas()

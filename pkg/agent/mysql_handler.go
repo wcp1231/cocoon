@@ -105,17 +105,11 @@ func (c *mysqlHandler) handleRequest() {
 				zap.String("src", c.inboundConn.addr),
 				zap.String("dst", c.outboundConn.addr),
 				zap.String("req", request.String()))
-
-			err := c.sendToServer(*request.GetRaw())
+			err := c.tryToMock(request)
 			if err != nil {
-				c.server.logger.Warn("Mysql send to server failed", zap.Error(err))
+				c.server.logger.Debug("Call mock server failed", zap.Error(err))
 				continue
 			}
-			//err := c.tryToMock(request)
-			//if err != nil {
-			//	c.server.logger.Debug("Call mock server failed", zap.Error(err))
-			//	continue
-			//}
 		}
 	}
 }
@@ -132,7 +126,8 @@ func (c *mysqlHandler) handleRawResponse() {
 				zap.String("dst", c.outboundConn.addr),
 				zap.String("resp", response.String()))
 
-			err := c.sendToClient(*response.GetRaw())
+			mysqlResp := response.(*mysql.MysqlMessage)
+			err := c.handleResponse(mysqlResp.GetRequest(), mysqlResp)
 			if err != nil {
 				c.server.logger.Warn("Mysql send to client failed", zap.Error(err))
 				continue
@@ -151,7 +146,7 @@ func (c *mysqlHandler) tryToMock(request common.Message) error {
 		return c.requestMockServer(request)
 	}
 
-	return c.sendRequestToOriginAndWait(request)
+	return c.sendToServer(*request.GetRaw())
 }
 
 // requestMockServer 获取 mock 结果
@@ -160,30 +155,10 @@ func (c *mysqlHandler) requestMockServer(request common.Message) error {
 
 	if result.Pass {
 		c.server.logger.Debug("Send request to origin")
-		return c.sendRequestToOriginAndWait(request)
+		return c.sendToServer(*request.GetRaw())
 	}
 
 	return c.handleResponse(request, result.Data)
-}
-
-// sendRequestToOriginAndWait 处理 request-response 类型的情况
-// 不支持 steam 或者双向通信类型的情况
-func (c *mysqlHandler) sendRequestToOriginAndWait(request common.Message) error {
-	_, err := c.outboundConn.c.Write(*request.GetRaw())
-	if err != nil {
-		c.server.logger.Debug("Send request to origin failed", zap.Error(err))
-	}
-
-	// 等待 response 并解析
-	response, more := <-c.responseC
-	if !more {
-		return nil
-	}
-	err = c.handleResponse(request, response)
-	if err != nil {
-		c.server.logger.Debug("Call record server failed", zap.Error(err))
-	}
-	return err
 }
 
 // handleResponse 处理 response
@@ -198,7 +173,7 @@ func (c *mysqlHandler) handleResponse(request, response common.Message) error {
 func (c *mysqlHandler) sendToClient(data []byte) error {
 	_, err := c.inboundConn.c.Write(data)
 	if err != nil {
-		c.server.logger.Debug("Write back failed", zap.Error(err))
+		c.server.logger.Debug("Write to client failed", zap.Error(err))
 		return err
 	}
 	return nil
@@ -207,7 +182,7 @@ func (c *mysqlHandler) sendToClient(data []byte) error {
 func (c *mysqlHandler) sendToServer(data []byte) error {
 	_, err := c.outboundConn.c.Write(data)
 	if err != nil {
-		c.server.logger.Debug("Write back failed", zap.Error(err))
+		c.server.logger.Debug("Write to server failed", zap.Error(err))
 		return err
 	}
 

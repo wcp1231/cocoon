@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -28,7 +27,7 @@ func MakeTrusted(typ Type, val []byte) Value {
 	if typ == Null {
 		return NULL
 	}
-	return Value{Type: typ, Value: val}
+	return Value{Type: typ, Value: string(val)}
 }
 
 // BuildValue builds a value from any go type. sqltype.Value is
@@ -437,19 +436,19 @@ func WriteMySQLValues(buf *Buffer, value Value) error {
 		var timestamp time.Time
 		var err error
 		var byteLen uint8 = 0
-		if bytes.ContainsRune(value.Value, '.') {
+		if strings.ContainsRune(value.Value, '.') {
 			byteLen = 11
 			timestamp, err = time.Parse("2006-01-02 15:04:05.000000", string(value.Value))
 			if err != nil {
 				return err
 			}
-		} else if bytes.ContainsRune(value.Value, ' ') {
+		} else if strings.ContainsRune(value.Value, ' ') {
 			byteLen = 7
 			timestamp, err = time.Parse("2006-01-02 15:04:05", string(value.Value))
 			if err != nil {
 				return err
 			}
-		} else if bytes.ContainsRune(value.Value, '-') {
+		} else if strings.ContainsRune(value.Value, '-') {
 			byteLen = 4
 			timestamp, err = time.Parse("2006-01-02", string(value.Value))
 			if err != nil {
@@ -478,9 +477,9 @@ func WriteMySQLValues(buf *Buffer, value Value) error {
 		timeStr := string(value.Value)
 		if timeStr == "_00:00:00_" {
 			byteLen = 0
-		} else if bytes.ContainsRune(value.Value, '.') {
+		} else if strings.ContainsRune(value.Value, '.') {
 			byteLen = 12
-		} else if bytes.ContainsRune(value.Value, ':') {
+		} else if strings.ContainsRune(value.Value, ':') {
 			byteLen = 8
 		}
 
@@ -549,10 +548,10 @@ func WriteMySQLValues(buf *Buffer, value Value) error {
 
 	case Decimal, Text, Blob, VarChar, Char,
 		Bit, Enum, Set, Geometry, TypeJSON:
-		buf.WriteLenEncodeBytes(value.Value)
+		buf.WriteLenEncodeString(value.Value)
 		return nil
 	case VarBinary, Binary:
-		buf.WriteLenEncodeBytes(value.Value)
+		buf.WriteLenEncodeString(value.Value)
 		return nil
 	default:
 		return fmt.Errorf("type.unhandle.error")

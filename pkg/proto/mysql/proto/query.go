@@ -298,7 +298,7 @@ type EventToken struct {
 // Value represents a typed value.
 type Value struct {
 	Type  Type   `json:"type,omitempty"`
-	Value []byte `json:"value,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 // BindVariable represents a single bind variable in a Query.
