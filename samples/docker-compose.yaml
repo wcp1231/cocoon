@@ -1,14 +1,14 @@
 version: '3'
 services:
-  mongo:
-    image: 'docker.io/library/mongo:4.4.11'
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: 'cocoon'
-      MONGO_INITDB_ROOT_PASSWORD: 'cocoon'
-    volumes:
-      - ./mongo:/etc/mongo
+#  mongo:
+#    image: 'docker.io/library/mongo:4.4.11'
+#    ports:
+#      - "27017:27017"
+#    environment:
+#      MONGO_INITDB_ROOT_USERNAME: 'cocoon'
+#      MONGO_INITDB_ROOT_PASSWORD: 'cocoon'
+#    volumes:
+#      - ./mongo:/etc/mongo
   mysql:
     image: 'docker.io/library/mysql:5.7.37'
     ports:
@@ -20,3 +20,7 @@ services:
       MYSQL_PASSWORD: 'cocoon'
     volumes:
       - ./mysql:/var/lib/mysql
+  redis:
+    image: 'docker.io/library/redis:5.0.14'
+    ports:
+      - "6379:6379"

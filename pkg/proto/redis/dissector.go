@@ -28,6 +28,8 @@ func (d *Dissector) StartRequestDissect(reader *bufio.Reader) {
 			break
 		}
 	}
+	fmt.Println("Redis request dissect finish")
+	close(d.requestC)
 }
 
 func (d *Dissector) StartResponseDissect(reader *bufio.Reader) {
@@ -38,6 +40,8 @@ func (d *Dissector) StartResponseDissect(reader *bufio.Reader) {
 			break
 		}
 	}
+	fmt.Println("Redis response dissect finish")
+	close(d.responseC)
 }
 
 func (d *Dissector) dissectRequest() error {

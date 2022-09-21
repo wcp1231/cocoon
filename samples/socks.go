@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/net/proxy"
 	"net"
@@ -22,8 +23,8 @@ func socksProxy(dialer proxy.Dialer) Option {
 		})
 	}
 }
-func newSocksDialer(addr, user, password string) (proxy.Dialer, error) {
-	return proxy.SOCKS5("tcp", addr, &proxy.Auth{User: user, Password: password}, proxy.Direct)
+func newSocksDialer(addr string) (proxy.Dialer, error) {
+	return proxy.SOCKS5("tcp", addr, &proxy.Auth{User: "", Password: ""}, proxy.Direct)
 }
 func connectMysql(dsn string, opts ...Option) *sql.DB {
 	db, err := sql.Open("mysql", dsn)
@@ -40,8 +41,8 @@ func connectMysql(dsn string, opts ...Option) *sql.DB {
 	return db
 }
 
-func newHttpClient(addr, user, password string) (*http.Client, error) {
-	dialSocksProxy, err := newSocksDialer(addr, user, password)
+func newHttpClient(addr string) (*http.Client, error) {
+	dialSocksProxy, err := newSocksDialer(addr)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Error creating SOCKS5 proxy. %v", err))
 	}
@@ -60,4 +61,16 @@ func newHttpClient(addr, user, password string) (*http.Client, error) {
 		}, nil
 	}
 	return nil, errors.New("Failed type assertion to DialContext")
+}
+func newRedisClient(redisAddr, proxyAddr string) (*redis.Client, error) {
+	dialSocksProxy, err := newSocksDialer(proxyAddr)
+	if err != nil {
+		return nil, err
+	}
+	return redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+		Dialer: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return dialSocksProxy.Dial(network, addr)
+		},
+	}), nil
 }

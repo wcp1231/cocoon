@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/go-redis/redis/v8"
 	"math/rand"
 	"net/http"
 	"os"
@@ -12,8 +13,9 @@ import (
 )
 
 type SampleApp struct {
-	db   *sql.DB
-	http *http.Client
+	db    *sql.DB
+	http  *http.Client
+	redis *redis.Client
 }
 
 func responseErr(w http.ResponseWriter, err error) {
@@ -32,19 +34,25 @@ func responseOk(w http.ResponseWriter, result interface{}) {
 }
 
 func main() {
-	dialer, err := newSocksDialer("127.0.0.1:7820", "", "")
+	const proxyAddr = "127.0.0.1:7820"
+	dialer, err := newSocksDialer(proxyAddr)
 	if err != nil {
 		panic(err)
 	}
-	httpClient, err := newHttpClient("127.0.0.1:7820", "", "")
+	httpClient, err := newHttpClient(proxyAddr)
 	if err != nil {
 		panic(err)
 	}
 	mysqlUrl := os.Getenv("mysql")
 	db := connectMysql(mysqlUrl, socksProxy(dialer))
+	redisUrl := os.Getenv("redis")
+	redis, err := newRedisClient(redisUrl, proxyAddr)
+	if err != nil {
+		panic(err)
+	}
 
 	rand.Seed(time.Now().UnixNano())
-	app := SampleApp{db: db, http: httpClient}
+	app := SampleApp{db: db, http: httpClient, redis: redis}
 
 	http.HandleFunc("/http/get", app.httpGet)
 	http.HandleFunc("/http/post", app.httpPost)
@@ -53,6 +61,8 @@ func main() {
 	http.HandleFunc("/mysql/update", app.mysqlUpdate)
 	http.HandleFunc("/mysql/delete", app.mysqlDelete)
 	http.HandleFunc("/mysql/prepared/select", app.mysqlPreparedSelect)
+	http.HandleFunc("/redis/string", app.redisString)
+	http.HandleFunc("/redis/zset", app.redisZSet)
 	err = http.ListenAndServe(":8090", nil)
 	if err != nil {
 		panic(err)

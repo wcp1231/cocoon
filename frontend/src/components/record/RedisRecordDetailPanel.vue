@@ -6,15 +6,15 @@
           <span class="header-key">{{ request.meta["CMD"] }}</span> <span class="header-val">{{ request.meta["KEY"] }}</span>
         </div>
       </div>
-      <template v-if="request.body">
+      <template v-if="request.payload['REDIS_REQ_CMD']">
         <Divider type="dashed" />
         <div>
-          {{ request.body }}
+          {{ request.payload['REDIS_REQ_CMD'] }}
         </div>
       </template>
     </AccordionTab>
     <AccordionTab header="Response">
-      <span class="overflow-wrap-item">{{ response.body }}</span>
+      <span class="overflow-wrap-item">{{ response.payload['REDIS_RESP_OBJ'] }}</span>
     </AccordionTab>
   </Accordion>
 </template>
