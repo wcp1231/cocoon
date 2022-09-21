@@ -3,12 +3,30 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
 func (s *SampleApp) httpGet(w http.ResponseWriter, req *http.Request) {
 	res, err := s.http.Get("http://httpbin.org/get")
+	if err != nil {
+		responseErr(w, err)
+		return
+	}
+	defer res.Body.Close()
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		responseErr(w, err)
+		return
+	}
+	var jsonBody interface{}
+	json.Unmarshal(resBody, &jsonBody)
+	responseOk(w, jsonBody)
+}
+func (s *SampleApp) httpStatus(w http.ResponseWriter, req *http.Request) {
+	code := req.URL.Query().Get("code")
+	res, err := s.http.Get(fmt.Sprintf("http://httpbin.org/status/%s", code))
 	if err != nil {
 		responseErr(w, err)
 		return

@@ -69,6 +69,7 @@ func (d *Dissector) readCmdQueryResponse() (*MysqlMessage, error) {
 	// COM_STMT_PREPARE_OK 和 OK_PACKET 似乎很像
 	if reqCmd == "COM_STMT_PREPARE" {
 		stmtPrepareOk, err := proto.UnPackStmtPrepareOk(data, d.respStream)
+		d.stmtParamsMap[stmtPrepareOk.StatementId] = stmtPrepareOk.ParamsCount
 		if err != nil {
 			return nil, err
 		}

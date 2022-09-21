@@ -2,8 +2,7 @@
   <div>
     <div class="content-section introduction">
       <div class="feature-intro">
-        <h1>Mocks View</h1>
-        <p>可以查看和修改 Mock 设置</p>
+        <h1 class="title">Mocks Setting <small>Mocks 设置</small></h1>
       </div>
     </div>
     <card class="mock-card">
@@ -99,6 +98,10 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.title small {
+  font-size: .5em;
+  color: #6c757d
+}
 .content-section.introduction .feature-intro h1 {
   margin-top: 0;
 }

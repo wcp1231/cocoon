@@ -13,12 +13,15 @@ import store from "@/store/index";
 
 const app = createApp(App);
 
+const wsUrl = `ws://${location.host}/api/ws`
+//const wsUrl = `ws://127.0.0.1:7070/api/ws`
+
 app
   .use(PrimeVue)
   .use(ConfirmationService)
   .use(toastservice)
   .use(store)
-  .use(VueNativeSock, `ws://${location.host}/api/ws`, {
+  .use(VueNativeSock, wsUrl, {
     store: store
   });
 

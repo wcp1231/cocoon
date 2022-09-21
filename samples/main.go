@@ -56,6 +56,7 @@ func main() {
 
 	http.HandleFunc("/http/get", app.httpGet)
 	http.HandleFunc("/http/post", app.httpPost)
+	http.HandleFunc("/http/sattus", app.httpStatus)
 	http.HandleFunc("/mysql/select", app.mysqlSelect)
 	http.HandleFunc("/mysql/insert", app.mysqlInsert)
 	http.HandleFunc("/mysql/update", app.mysqlUpdate)

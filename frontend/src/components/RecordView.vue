@@ -2,8 +2,7 @@
   <div>
     <div class="content-section introduction">
       <div class="feature-intro">
-        <h1>Record View</h1>
-        <p>可以查看网络记录</p>
+        <h1 class="title">Records View <small>网络请求记录</small></h1>
       </div>
     </div>
     <card class="record-card" style="height: calc(100vh - 130px)">
@@ -29,7 +28,7 @@
             </Column>
             <Column field="response" header="Response" headerStyle="flex: 1;" bodyStyle="flex: 1;">
               <template #body="slotProps">
-                <response-column-item :protocol="slotProps.data.protocol" :response="slotProps.data.response" />
+                <response-column-item :protocol="slotProps.data.protocol" :request="slotProps.data.request" :response="slotProps.data.response" />
               </template>
             </Column>
             <Column field="timespan" header="Time" headerStyle="flex: 0 0 100px;" bodyStyle="flex: 0 0 100px;">
@@ -43,6 +42,7 @@
                 <redis-record-detail-panel v-if="slotProps.data.protocol === 'Redis'" :record="slotProps.data" />
                 <dubbo-record-detail-panel v-if="slotProps.data.protocol === 'Dubbo'" :record="slotProps.data" />
                 <mongo-record-detail-panel v-if="slotProps.data.protocol === 'Mongo'" :record="slotProps.data" />
+                <mysql-record-detail-panel v-if="slotProps.data.protocol === 'Mysql'" :record="slotProps.data" />
               </div>
             </template>
           </DataTable>
@@ -67,6 +67,7 @@ import HttpRecordDetailPanel from "@/components/record/HttpRecordDetailPanel.vue
 import RedisRecordDetailPanel from "@/components/record/RedisRecordDetailPanel.vue";
 import DubboRecordDetailPanel from "@/components/record/DubboRecordDetailPanel.vue";
 import MongoRecordDetailPanel from "@/components/record/MongoRecordDetailPanel.vue";
+import MysqlRecordDetailPanel from "@/components/record/MysqlRecordDetailPanel.vue";
 
 export default defineComponent({
   name: "RecordView",
@@ -108,6 +109,7 @@ export default defineComponent({
     RedisRecordDetailPanel,
     DubboRecordDetailPanel,
     MongoRecordDetailPanel,
+    MysqlRecordDetailPanel,
   },
 });
 </script>
@@ -137,9 +139,16 @@ export default defineComponent({
 .protocol-tag.protocol-Mongo-tag {
   background-color: rgb(17, 97, 73);
 }
+.protocol-tag.protocol-Mysql-tag {
+  background-color: #3E6E93;
+}
 </style>
 
 <style>
+.title small {
+  font-size: .5em;
+  color: #6c757d
+}
 .record-card.p-card .p-card-body {
   padding-top: 0;
 }

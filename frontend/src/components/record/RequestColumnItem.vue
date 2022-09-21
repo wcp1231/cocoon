@@ -5,8 +5,8 @@
       <span class="request-column-info">{{ request.meta['HOST'] + request.meta['URL'] }}</span>
     </template>
     <template v-else-if="protocol === 'Redis'">
-      <span class="request-column-tag">{{ request.meta['CMD'] }}</span>
-      <span class="request-column-info">{{ request.meta['KEY'] }}</span>
+      <span class="request-column-tag">{{ request.payload['REDIS_CMD'] }}</span>
+      <span class="request-column-info">{{ request.payload['REDIS_KEY'] }}</span>
     </template>
     <template v-else-if="protocol === 'Dubbo'">
       <span v-if="request.meta['HEARTBEAT']" class="request-column-tag">HeartBeat</span>
@@ -18,6 +18,10 @@
     <template v-else-if="protocol === 'Mongo'">
       <span class="request-column-tag">{{ request.meta["OP_TYPE"] }}</span>
       <span class="request-column-info">{{ `${request.meta["COLLECTION"]} ${request.meta["QUERY"]}` }}</span>
+    </template>
+    <template v-else-if="protocol === 'Mysql'">
+      <span class="request-column-tag">{{ request.payload["MYSQL_OP_TYPE"] }}</span>
+      <span class="request-column-info">{{ request.payload["MYSQL_QUERY"] }}</span>
     </template>
     <template v-else>
       {{ request }}

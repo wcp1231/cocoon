@@ -3,18 +3,18 @@
     <AccordionTab header="Request">
       <div class="header-panel">
         <div>
-          <span class="header-key">{{ request.payload['REDIS_CMD'] }}</span> <span class="header-val">{{ request.payload["REDIS_KEY"] }}</span>
+          <span class="header-key">{{ request.payload["MYSQL_OP_TYPE"] }}</span> <span class="header-val">{{ request.payload["MYSQL_QUERY"] }}</span>
         </div>
       </div>
-      <template v-if="request.payload['REDIS_REQ_CMD']">
+      <template v-if="request.payload">
         <Divider type="dashed" />
         <div>
-          {{ request.payload['REDIS_REQ_CMD'] }}
+          {{ request.payload['MYSQL_STMT_EXECUTE_PACKET'] }}
         </div>
       </template>
     </AccordionTab>
     <AccordionTab header="Response">
-      <span class="overflow-wrap-item">{{ response.payload['REDIS_RESP_OBJ'] }}</span>
+      <span class="overflow-wrap-item">{{ response.payload }}</span>
     </AccordionTab>
   </Accordion>
 </template>
@@ -26,7 +26,7 @@ import AccordionTab from 'primevue/accordiontab';
 import Divider from 'primevue/divider';
 
 export default defineComponent({
-  name: "RedisRecordDetailPanel",
+  name: "MysqlRecordDetailPanel",
   props: {
     record: Object
   },

@@ -17,6 +17,7 @@ export default defineComponent({
   name: "ResponseColumnItem",
   props: {
     protocol: String,
+    request: Object,
     response: Object
   },
   setup(props) {
@@ -29,6 +30,15 @@ export default defineComponent({
         return null;
       }
       return data.meta[key];
+    };
+    const getValueFromPayload = (data, key) => {
+      if (!data) {
+        return null;
+      }
+      if (!data.payload) {
+        return null;
+      }
+      return data.payload[key];
     };
     const checkResponse = (resp, key) => {
       if (!resp) {
@@ -43,11 +53,11 @@ export default defineComponent({
 
     if (props.protocol === 'HTTP') {
       status = computed(() => {
-        return getValueFromMeta(props.response, "STATUS") || "PENDING";
+        return getValueFromPayload(props.response, "HTTP_STATUS") || "PENDING";
       });
     } else if (props.protocol === 'Redis') {
       status = computed(() => {
-        let ok = checkResponse(props.response, "meta");
+        let ok = checkResponse(props.response, "payload");
         return ok ? "OK" : "PENDING";
       });
     } else if (props.protocol === 'Dubbo') {
@@ -60,14 +70,23 @@ export default defineComponent({
         let ok = checkResponse(props.response, "body");
         return ok ? "OK": "PENDING";
       });
+    } else if (props.protocol === 'Mysql') {
+      status = computed(() => {
+        let ok = checkResponse(props.response, "payload");
+        let isStmtClose = props.request.payload['MYSQL_OP_TYPE'] === 'COM_STMT_CLOSE'
+        if (isStmtClose) {
+          return "OK"
+        }
+        return ok ? "OK": "PENDING";
+      });
     }
     if (mock) {
       return () => (
-          <div><span class="response-status-tag">{ status.value }</span><Tag severity="info">MOCK</Tag></div>
+          <div><span class={`response-status-tag response-status-tag-${status.value}`}>{ status.value }</span><Tag severity="info">MOCK</Tag></div>
       )
     }
     return () => (
-        <div><span class="response-status-tag">{ status.value }</span></div>
+        <div><span class={`response-status-tag response-status-tag-${status.value}`} >{ status.value }</span></div>
     );
   },
   components: {
@@ -75,35 +94,6 @@ export default defineComponent({
   }
 });
 </script>
-
-<!--<script lang="ts">-->
-<!--import { defineComponent } from "vue";-->
-
-<!--export default defineComponent({-->
-<!--  name: "ResponseColumnItem",-->
-<!--  props: {-->
-<!--    response: Object,-->
-<!--  },-->
-<!--  data() {-->
-<!--    return {-->
-<!--    };-->
-<!--  },-->
-<!--  computed: {-->
-<!--    protocol() {-->
-<!--      let protocol = 'UNKNOWN';-->
-<!--      if (!this.response) {-->
-<!--        return protocol;-->
-<!--      }-->
-<!--      protocol = this.response.meta['PROTOCOL'] || protocol;-->
-<!--      return protocol;-->
-<!--    }-->
-<!--  },-->
-<!--  methods: {-->
-<!--  },-->
-<!--  components: {-->
-<!--  },-->
-<!--});-->
-<!--</script>-->
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
@@ -116,5 +106,25 @@ export default defineComponent({
   padding: 0.25rem 0.4rem;
   border: solid 1px black;
   border-radius: 4px;
+}
+.response-status-tag.response-status-tag-OK {
+  color: #28a745;
+  border: solid 1px #28a745;
+}
+.response-status-tag.response-status-tag-200 {
+  color: #28a745;
+  border: solid 1px #28a745;
+}
+.response-status-tag.response-status-tag-300 {
+  color: #6c757d;
+  border: solid 1px #6c757d;
+}
+.response-status-tag.response-status-tag-400 {
+  color: #ffc107;
+  border: solid 1px #ffc107;
+}
+.response-status-tag.response-status-tag-500 {
+  color: #dc3545;
+  border: solid 1px #dc3545;
 }
 </style>

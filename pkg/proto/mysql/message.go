@@ -10,6 +10,7 @@ const (
 	MYSQL_QUERY_KEY           = "MYSQL_QUERY"
 	MYSQL_ERR_PACKET_KEY      = "MYSQL_ERR_PACKET"
 	MYSQL_OK_PACKET_KEY       = "MYSQL_OK_PACKET"
+	MYSQL_STMT_EXECUTE_KEY    = "MYSQL_STMT_EXECUTE_PACKET"
 	MYSQL_STMT_PREPARE_OK_KEY = "MYSQL_STMT_PREPARE_OK_PACKET"
 	MYSQL_RESULT_SET_KEY      = "MYSQL_RESULT_SET_PACKET"
 )
@@ -63,6 +64,9 @@ func (m *MysqlMessage) HasOK() bool {
 }
 func (m *MysqlMessage) GetOk() *proto.OK {
 	return m.Payload[MYSQL_OK_PACKET_KEY].(*proto.OK)
+}
+func (m *MysqlMessage) SetStmtExecute(ok *proto.StmtExecute) {
+	m.Payload[MYSQL_STMT_EXECUTE_KEY] = ok
 }
 func (m *MysqlMessage) SetStmtPrepareOk(ok *proto.StmtPrepareOK) {
 	m.Payload[MYSQL_STMT_PREPARE_OK_KEY] = ok

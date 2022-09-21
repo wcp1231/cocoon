@@ -20,9 +20,6 @@ func (d *Dissector) readRequest() (common.Message, error) {
 	message := NewMysqlGenericMessage()
 	message.Raw = &raw
 	message.SetOpType(proto.CommandString(data[0]))
-	if len(data) > 1 {
-		message.SetQuery(string(removeSpaces.ReplaceAll(data[1:], []byte{' '})))
-	}
 
 	switch data[0] {
 	case proto.COM_QUIT:
@@ -32,16 +29,28 @@ func (d *Dissector) readRequest() (common.Message, error) {
 	case proto.COM_PING:
 		break
 	case proto.COM_QUERY:
+		message.SetQuery(string(removeSpaces.ReplaceAll(data[1:], []byte{' '})))
 		fmt.Printf("Mysql com query. SQL=%v\n", string(removeSpaces.ReplaceAll(data, []byte{' '})))
 	case proto.COM_STMT_PREPARE:
+		message.SetQuery(string(removeSpaces.ReplaceAll(data[1:], []byte{' '})))
 		fmt.Printf("Mysql com stmt perpare. %v\n", string(data))
 	case proto.COM_STMT_EXECUTE:
+		stmtExecute, err := proto.UnPackStmtExecute(data, d.stmtParamsMap)
+		if err != nil {
+			fmt.Printf("Parse mysql stmt execute failed. %v\n", err)
+		}
+		message.SetStmtExecute(stmtExecute)
 		fmt.Printf("Mysql com stmt execute. %v\n", string(data))
 	case proto.COM_STMT_SEND_LONG_DATA:
 		fmt.Printf("Mysql com stmt send long data. %v\n", string(data))
 	case proto.COM_STMT_RESET:
 		fmt.Printf("Mysql com stmt reset. %v\n", string(data))
 	case proto.COM_STMT_CLOSE:
+		stmtClose, err := proto.UnPackStmtClose(data)
+		if err != nil {
+			fmt.Printf("Parse mysql stmt close failed. %v\n", err)
+		}
+		delete(d.stmtParamsMap, stmtClose.StatementId)
 		fmt.Printf("Mysql com stmt close. %v\n", string(data))
 	default:
 		fmt.Printf("Mysql command not implemented. %v\n%v\n", proto.CommandString(data[0]), string(data))

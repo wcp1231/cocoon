@@ -24,6 +24,8 @@ type Dissector struct {
 	capabilities uint32
 	// 解析 response 时需要根据 request 的类型
 	flyingRequests *list.List
+	// map[stmt]->params
+	stmtParamsMap map[uint32]uint16
 }
 
 func NewRequestDissector(reqC, respC chan common.Message) *Dissector {
@@ -31,6 +33,7 @@ func NewRequestDissector(reqC, respC chan common.Message) *Dissector {
 		requestC:       reqC,
 		responseC:      respC,
 		flyingRequests: list.New(),
+		stmtParamsMap:  make(map[uint32]uint16),
 	}
 }
 
