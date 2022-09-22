@@ -67,8 +67,10 @@ func unPackStmtPrepareOkParams(stream *packet.Stream, prepareOk *StmtPrepareOK) 
 		}
 		prepareOk.Params = append(prepareOk.Params, field)
 	}
-	if prepareOk.ParamsEOF, err = readEOF(stream); err != nil {
-		return err
+	if prepareOk.ParamsCount > 0 {
+		if prepareOk.ParamsEOF, err = readEOF(stream); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -87,8 +89,10 @@ func unPackStmtPrepareOkColumns(stream *packet.Stream, prepareOk *StmtPrepareOK)
 		}
 		prepareOk.Columns = append(prepareOk.Columns, field)
 	}
-	if prepareOk.ColumnsEOF, err = readEOF(stream); err != nil {
-		return err
+	if prepareOk.ColumnsCount > 0 {
+		if prepareOk.ColumnsEOF, err = readEOF(stream); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -29,6 +29,12 @@ type MysqlSample struct {
 	NullType      interface{} `json:"nullType"`
 }
 
+const INSERT_PREFIX = `INSERT INTO samples(
+tiny_type,int_type,big_int_type,float_type,double_type,decimal_type,
+date_type,time_type,year_type,datetime_type,timestamp_type,
+char_type,varchar_type,tinyblob_type,tinytext_type,blob_type,text_type)`
+const INSERT_SQL = INSERT_PREFIX + ` VALUES (?,?,?,?,?,?,?,?,?,?,NOW(),?,?,?,?,?,?)`
+
 func NewRandomMysqlSample() *MysqlSample {
 	date := RandomDate()
 	return &MysqlSample{
@@ -63,14 +69,18 @@ func NewMysqlSampleFromScan(row *sql.Rows) (*MysqlSample, error) {
 }
 
 func (m *MysqlSample) InsertSQL() string {
-	insert := `INSERT INTO samples(
-tiny_type,int_type,big_int_type,float_type,double_type,decimal_type,
-date_type,time_type,year_type,datetime_type,timestamp_type,
-char_type,varchar_type,tinyblob_type,tinytext_type,blob_type,text_type)
-VALUES (%d,%d,%d,%f,%f,%8.4f,
+	insert := INSERT_PREFIX + ` VALUES (%d,%d,%d,%f,%f,%8.4f,
 '%s','%s','%s','%s',NOW(),
 '%c','%s','%s','%s','%s','%s')`
 	return fmt.Sprintf(insert, m.TinyType, m.IntType, m.BigIntType, m.FloatType, m.DoubleType, m.DecimalType,
 		m.DateType, m.TimeType, m.YearType, m.DatetimeType,
 		m.CharType, m.VarCharType, m.TinyBlobType, m.TinyTextType, m.BlobType, m.TextType)
+}
+
+func (m *MysqlSample) GetInsertParams() []interface{} {
+	return []interface{}{
+		m.TinyType, m.IntType, m.BigIntType, m.FloatType, m.DoubleType, m.DecimalType,
+		m.DateType, m.TimeType, m.YearType, m.DatetimeType,
+		string(m.CharType), m.VarCharType, m.TinyBlobType, m.TinyTextType, m.BlobType, m.TextType,
+	}
 }

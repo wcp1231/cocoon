@@ -50,6 +50,8 @@ export default defineComponent({
       return true;
     }
 
+    // TODO 定义统一的异常格式，现在 HTTP、Redis、Mysql 等的错误字段都不一样
+
     if (props.protocol === 'HTTP') {
       status = computed(() => {
         return getValueFromPayload(props.response, "HTTP_STATUS") || "PENDING";

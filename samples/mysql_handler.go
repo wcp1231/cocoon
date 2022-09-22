@@ -93,3 +93,34 @@ func (s *SampleApp) mysqlPreparedSelect(w http.ResponseWriter, req *http.Request
 	}
 	responseOk(w, samples)
 }
+
+func (s *SampleApp) mysqlPreparedInsert(w http.ResponseWriter, req *http.Request) {
+	sample := NewRandomMysqlSample()
+	stmt, err := s.db.Prepare(INSERT_SQL)
+	if err != nil {
+		responseErr(w, err)
+		return
+	}
+	defer stmt.Close()
+	res, err := stmt.Exec(sample.GetInsertParams()...)
+	if err != nil {
+		responseErr(w, err)
+		return
+	}
+	var lastInsertId, rowAffected int64
+	if lastInsertId, err = res.LastInsertId(); err != nil {
+		responseErr(w, err)
+		return
+	}
+	if rowAffected, err = res.RowsAffected(); err != nil {
+		responseErr(w, err)
+		return
+	}
+	responseOk(w, struct {
+		LastInsertId int64
+		RowsAffected int64
+	}{
+		LastInsertId: lastInsertId,
+		RowsAffected: rowAffected,
+	})
+}

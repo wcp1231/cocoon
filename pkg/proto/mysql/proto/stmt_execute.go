@@ -26,7 +26,11 @@ func UnPackStmtExecute(data []byte, stmtMap map[uint32]uint16) (*StmtExecute, er
 	}
 
 	paramsCount := int(stmtMap[stmtExecute.StatementId])
-	nullMask, err := buf.ReadBytes((paramsCount + 7 + 2) / 8)
+	if paramsCount <= 0 {
+		return stmtExecute, nil
+	}
+
+	nullMask, err := buf.ReadBytes((paramsCount + 7) / 8)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +38,7 @@ func UnPackStmtExecute(data []byte, stmtMap map[uint32]uint16) (*StmtExecute, er
 	if err != nil {
 		return nil, err
 	}
-	if boundFlag == 1 {
+	if boundFlag == 0x01 {
 		values, err := unPackStmtExecute(buf, nullMask, paramsCount)
 		if err != nil {
 			return nil, err
@@ -60,7 +64,7 @@ func unPackStmtExecute(buf *Buffer, nullMask []byte, paramsCount int) ([]Value, 
 		if err != nil {
 			return nil, err
 		}
-		if ((nullMask[(i+2)>>3] >> uint((i+2)&7)) & 1) == 1 {
+		if ((nullMask[i>>3] >> uint(i&7)) & 1) == 1 {
 			result[i] = Value{}
 			continue
 		}

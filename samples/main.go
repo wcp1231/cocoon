@@ -62,6 +62,7 @@ func main() {
 	http.HandleFunc("/mysql/update", app.mysqlUpdate)
 	http.HandleFunc("/mysql/delete", app.mysqlDelete)
 	http.HandleFunc("/mysql/prepared/select", app.mysqlPreparedSelect)
+	http.HandleFunc("/mysql/prepared/insert", app.mysqlPreparedInsert)
 	http.HandleFunc("/redis/string", app.redisString)
 	http.HandleFunc("/redis/zset", app.redisZSet)
 	err = http.ListenAndServe(":8090", nil)
