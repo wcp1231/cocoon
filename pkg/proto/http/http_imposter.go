@@ -1,81 +1,63 @@
-package mock
+package http
 
 import (
 	"bytes"
 	"cocoon/pkg/model/common"
-	httpProto "cocoon/pkg/proto/http"
+	"cocoon/pkg/model/mock"
 	"io"
 	"net/http"
-	"os"
-	"regexp"
 	"strconv"
 	"strings"
 )
 
 type HttpRequestMatcher struct {
 	id     int32
-	config httpMockConfig
+	config mock.HttpMockConfig
 
-	method    FieldMatcher
-	host      FieldMatcher
-	url       FieldMatcher
-	reqHeader map[string]FieldMatcher
+	method    mock.FieldMatcher
+	host      mock.FieldMatcher
+	url       mock.FieldMatcher
+	reqHeader map[string]mock.FieldMatcher
 
-	status     string
+	status     int
 	respHeader map[string]string
 	respBody   string
 }
 
-func newHttpRequestMatcherFromConfig(config httpMockConfig, id int32) *HttpRequestMatcher {
+func NewHttpRequestMatcherFromConfig(config mock.HttpMockConfig, id int32) *HttpRequestMatcher {
 	matcher := &HttpRequestMatcher{
 		id:     id,
 		config: config,
 	}
 	if config.Request.Method != "" {
-		matcher.method = &StringMatcher{
-			expect: config.Request.Method,
+		matcher.method = &mock.StringMatcher{
+			Expect: config.Request.Method,
 		}
 	}
 	if config.Request.Host != nil {
 		hostConfig := config.Request.Host
-		matcher.host = newFieldMatcher(hostConfig)
+		matcher.host = mock.NewFieldMatcher(hostConfig)
 	}
 	if config.Request.Url != nil {
 		urlConfig := config.Request.Url
-		matcher.url = newFieldMatcher(urlConfig)
+		matcher.url = mock.NewFieldMatcher(urlConfig)
 	}
 	headerConfig := config.Request.Header
 	if len(headerConfig) > 0 {
-		matcher.reqHeader = map[string]FieldMatcher{}
+		matcher.reqHeader = map[string]mock.FieldMatcher{}
 	}
 	for k, v := range config.Request.Header {
-		matcher.reqHeader[k] = newFieldMatcher(v)
+		matcher.reqHeader[k] = mock.NewFieldMatcher(v)
 	}
 
-	matcher.status = config.Response.Status
+	matcher.status, _ = strconv.Atoi(config.Response.Status)
 	matcher.respHeader = config.Response.Header
 	matcher.respBody = config.Response.Body
 	return matcher
 }
 
-func newFieldMatcher(field *fieldMockConfig) FieldMatcher {
-	if field.Equals != "" {
-		return &StringMatcher{
-			expect: field.Equals,
-		}
-	}
-	regex, err := regexp.Compile(field.Regex)
-	if err != nil {
-		// TODO
-		os.Exit(1)
-	}
-	return &RegexMatcher{
-		regex: regex,
-	}
-}
-
 func (h *HttpRequestMatcher) Match(r common.Message) bool {
-	req := r.(*httpProto.HTTPMessage)
+	req := r.(*HTTPMessage)
 	if h.method != nil {
 		method := req.Meta["METHOD"]
 		if !h.method.Match(method) {
@@ -109,20 +91,24 @@ func (h *HttpRequestMatcher) Match(r common.Message) bool {
 
 func (h *HttpRequestMatcher) Data() common.Message {
 	response := http.Response{}
-	response.StatusCode, _ = strconv.Atoi(h.status)
+	response.StatusCode = h.status
 	response.Header = http.Header{}
 	response.ProtoMajor = 1
 	response.ProtoMinor = 1
 
-	message := httpProto.NewHTTPGenericMessage()
+	message := NewHTTPGenericMessage()
 	message.SetMock()
-	message.Meta["STATUS"] = h.status
+	message.SetStatusCode(h.status)
+	//headers := make(map[string][]string)
 	for k, v := range h.respHeader {
-		message.Header[k] = v
+		//headers[k] = strings.Split(v, ";;")
 		response.Header[k] = strings.Split(v, ";;")
 	}
+	//message.SetHttpHeader(headers)
+	message.SetHttpHeader(response.Header)
+
 	body := []byte(h.respBody)
-	message.Body = &body
+	message.SetBody(body)
 
 	bodyBuf := bytes.NewBuffer(body)
 	response.ContentLength = int64(bodyBuf.Len())

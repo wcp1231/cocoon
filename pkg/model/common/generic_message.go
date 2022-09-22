@@ -28,7 +28,7 @@ type GenericMessage struct {
 	Header      map[string]string
 	Payload     map[string]interface{}
 	Body        *[]byte
-	Raw         *[]byte `json:"raw"` // 原始数据
+	Raw         *[]byte `json:"raw"` // 原始数据 TODO 为啥要用指针？
 }
 
 func (g *GenericMessage) ID() int32 {

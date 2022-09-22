@@ -1,7 +1,8 @@
-package mock
+package http
 
 import (
 	"cocoon/pkg/model/common"
+	"cocoon/pkg/model/mock"
 	"testing"
 )
 
@@ -17,13 +18,13 @@ func TestRequestImporter_Match(t *testing.T) {
 			"User-Agent":      "okhttp/3.14.2",
 		},
 	}
-	config := httpMockConfig{
-		Request: httpRequestMockConfig{
-			Url: &fieldMockConfig{
+	config := mock.HttpMockConfig{
+		Request: mock.HttpRequestMockConfig{
+			Url: &mock.FieldMockConfig{
 				Equals: "/internal/user/61f170000000000000000000",
 			},
 		},
-		Response: httpResponseMockConfig{
+		Response: mock.HttpResponseMockConfig{
 			Status: "200",
 			Header: map[string]string{
 				"Content-Type": "application/json;charset=UTF-8",
@@ -31,7 +32,7 @@ func TestRequestImporter_Match(t *testing.T) {
 			Body: "{}",
 		},
 	}
-	matcher := newHttpRequestMatcherFromConfig(config, 0)
+	matcher := NewHttpRequestMatcherFromConfig(config, 0)
 
 	if !matcher.Match(req) {
 		t.Fatal("HttpRequestMatcher failed")

@@ -49,7 +49,6 @@ export default defineComponent({
       }
       return true;
     }
-    let mock = getValueFromMeta(props.response, "MOCK");
 
     if (props.protocol === 'HTTP') {
       status = computed(() => {
@@ -80,7 +79,8 @@ export default defineComponent({
         return ok ? "OK": "PENDING";
       });
     }
-    if (mock) {
+    let mock = computed(() => getValueFromMeta(props.response, "MOCK") )
+    if (mock.value) {
       return () => (
           <div><span class={`response-status-tag response-status-tag-${status.value}`}>{ status.value }</span><Tag severity="info">MOCK</Tag></div>
       )

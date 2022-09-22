@@ -1,6 +1,7 @@
 package mock
 
 import (
+	mockModel "cocoon/pkg/model/mock"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -12,7 +13,7 @@ import (
 func (m *MockService) ListMocks(w http.ResponseWriter, r *http.Request) {
 	configs := m.GetConfig()
 	result := map[string]interface{}{
-		"ok": true,
+		"ok":   true,
 		"data": configs,
 	}
 	data, err := json.Marshal(result)
@@ -26,7 +27,7 @@ func (m *MockService) ListMocks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *MockService) AddMocks(w http.ResponseWriter, r *http.Request) {
-	var body mockConfig
+	var body mockModel.MockConfig
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		m.logger.Warn("Add mock parse body failed", zap.Error(err))

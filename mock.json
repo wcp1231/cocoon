@@ -11,55 +11,126 @@
         },
         "body": "{\"errorCode\":0,\"text\":\"\",\"data\":[{\"id\":\"1\",\"password\":\"123\",\"business\":[]}],\"now\":\"2022-01-27T07:45:55.964Z\",\"version\":\"1.0.0\",\"ok\":true}"
       }
+    },
+    {
+      "request": {
+        "url": { "equals": "/get" }
+      },
+      "response": {
+        "status": "200",
+        "header": {
+          "Cache-Control": "no-cache, no-store, max-age=0, must-revalidate",
+          "Content-Type": "application/json;charset=UTF-8"
+        },
+        "body": "[{\"appName\":\"APOLLO-CONFIGSERVICE\"}]"
+      }
     }
   ],
   "redis": [
     {
       "request": {
         "cmd": {
-          "equals": "\"GET\""
+          "equals": "get"
         },
         "key": {
-          "equals": "\"test_11\""
+          "equals": "key_1"
         }
       },
       "response": {
         "type": "string",
-        "string": "some data"
+        "value": "some data"
       }
     },
     {
       "request": {
         "cmd": {
-          "equals": "\"GET\""
+          "equals": "get"
         },
         "key": {
-          "equals": "\"user:61f170000000000000000000\""
+          "equals": "key_2"
+        }
+      },
+      "response": {
+        "type": "integer",
+        "value": "100"
+      }
+    },
+    {
+      "request": {
+        "cmd": {
+          "equals": "get"
+        },
+        "key": {
+          "equals": "key_3"
+        }
+      },
+      "response": {
+        "type": "error",
+        "value": "some error"
+      }
+    },
+    {
+      "request": {
+        "cmd": {
+          "equals": "get"
+        },
+        "key": {
+          "equals": "key_4"
+        }
+      },
+      "response": {
+        "type": "null",
+        "value": ""
+      }
+    },
+    {
+      "request": {
+        "cmd": {
+          "equals": "zrange"
+        },
+        "key": {
+          "equals": "zset_test"
         }
       },
       "response": {
         "type": "array",
-        "array": ["some", "array", "data"]
+        "array": [
+          { "type": "string", "value": "mem_13" },
+          { "type": "string", "value": "100" }
+        ]
+      }
+    }
+  ],
+  "mongo": [],
+  "dubbo": [],
+  "mysql": [
+    {
+      "request": {
+        "cmd": {
+          "equals": "COM_STMT_EXECUTE"
+        },
+        "stmt-id": {
+          "equals": "1231"
+        }
+      },
+      "response": {
+        "cmd": "",
+        "fields": [{ "name":  "xxx", "type": "xxxx" }],
+        "rows": [{ "type": "xxxx", "value": "xxxx" }]
       }
     },
     {
       "request": {
         "cmd": {
-          "equals": "\"GET\""
+          "equals": ""
         },
-        "key": {
-          "equals": "\"user:61f170000000000000000000\""
+        "query": {
+          "regex": "xxxxx"
         }
       },
       "response": {
-        "type": "hash",
-        "hash": {
-          "key-1": "val-1",
-          "key-2": "val-2"
-        }
+        "cmd": ""
       }
     }
-  ],
-  "mongo": [],
-  "dubbo": []
+  ]
 }
