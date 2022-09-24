@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/go-sql-driver/mysql"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/topology"
 	"golang.org/x/net/proxy"
 	"net"
 	"net/http"
@@ -73,4 +76,17 @@ func newRedisClient(redisAddr, proxyAddr string) (*redis.Client, error) {
 			return dialSocksProxy.Dial(network, addr)
 		},
 	}), nil
+}
+
+func newMongoClient(mongoUrl, proxyAddr string) (*mongo.Client, error) {
+	opts := options.Client().ApplyURI(mongoUrl)
+	dialSocksProxy, err := newSocksDialer(proxyAddr)
+	if err != nil {
+		return nil, err
+	}
+	dialer := func(ctx context.Context, network, address string) (net.Conn, error) {
+		return dialSocksProxy.Dial(network, address)
+	}
+	opts.SetDialer(topology.DialerFunc(dialer))
+	return mongo.Connect(context.Background(), opts)
 }

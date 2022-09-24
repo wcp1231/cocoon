@@ -2,10 +2,8 @@ package mongo
 
 import (
 	"bufio"
-	"bytes"
 	"cocoon/pkg/model/common"
 	"fmt"
-	"io"
 )
 
 type Dissector struct {
@@ -47,40 +45,34 @@ func (d *Dissector) StartResponseDissect(reader *bufio.Reader) {
 }
 
 func (d *Dissector) dissectRequest() error {
-	buf := new(bytes.Buffer)
-	br := io.TeeReader(d.reqReader, buf)
-
-	message, err := Parse(br)
+	message, err := Parse(d.reqReader)
 	if err != nil {
-		if err == io.EOF {
-			return nil
-		}
 		fmt.Println("Mongo request dissect error", err.Error())
 		return err
 	}
 
-	raw := buf.Bytes()
-	message.SetRaw(&raw)
+	raw, err := Dump(message)
+	if err != nil {
+		return err
+	}
 
+	message.SetRaw(&raw)
 	message.CaptureNow()
 	d.requestC <- message
 	return nil
 }
 
 func (d *Dissector) dissectResponse() error {
-	buf := new(bytes.Buffer)
-	br := io.TeeReader(d.respReader, buf)
-
-	message, err := Parse(br)
+	message, err := Parse(d.respReader)
 	if err != nil {
-		if err == io.EOF {
-			return nil
-		}
 		fmt.Println("Mongo response dissect error", err.Error())
 		return err
 	}
 
-	raw := buf.Bytes()
+	raw, err := Dump(message)
+	if err != nil {
+		return err
+	}
 	message.SetRaw(&raw)
 	message.CaptureNow()
 	d.responseC <- message

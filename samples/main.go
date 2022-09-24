@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/go-redis/redis/v8"
+	"go.mongodb.org/mongo-driver/mongo"
 	"math/rand"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ type SampleApp struct {
 	db    *sql.DB
 	http  *http.Client
 	redis *redis.Client
+	mongo *mongo.Client
 }
 
 func responseErr(w http.ResponseWriter, err error) {
@@ -50,13 +52,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	mongoUrl := os.Getenv("mongo")
+	mongo, err := newMongoClient(mongoUrl, proxyAddr)
+	if err != nil {
+		panic(err)
+	}
 
 	rand.Seed(time.Now().UnixNano())
-	app := SampleApp{db: db, http: httpClient, redis: redis}
+	app := SampleApp{db: db, http: httpClient, redis: redis, mongo: mongo}
 
 	http.HandleFunc("/http/get", app.httpGet)
 	http.HandleFunc("/http/post", app.httpPost)
 	http.HandleFunc("/http/sattus", app.httpStatus)
+	http.HandleFunc("/mongo/find", app.mongoFind)
+	http.HandleFunc("/mongo/insert", app.mongoInsert)
+	http.HandleFunc("/mongo/remove", app.mongoRemove)
 	http.HandleFunc("/mysql/select", app.mysqlSelect)
 	http.HandleFunc("/mysql/insert", app.mysqlInsert)
 	http.HandleFunc("/mysql/update", app.mysqlUpdate)
