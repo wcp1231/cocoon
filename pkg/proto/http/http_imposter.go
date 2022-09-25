@@ -115,8 +115,7 @@ func (h *HttpRequestMatcher) Data() common.Message {
 	response.Body = io.NopCloser(bodyBuf)
 	buf := new(bytes.Buffer)
 	_ = response.Write(buf)
-	bs := buf.Bytes()
-	message.Raw = &bs
+	message.setRaw(buf.Bytes())
 	return message
 }
 

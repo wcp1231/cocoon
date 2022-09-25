@@ -54,7 +54,7 @@ func (d *Dissector) dissectRequest() error {
 		return err
 	}
 
-	message.SetRequestCmd(object.Pretty())
+	message.SetRequest(object)
 	reqCmds := object.(*RedisArray)
 	message.SetCmd(reqCmds.Items[0].Text())
 	if reqCmds.Len > 1 {
@@ -64,8 +64,6 @@ func (d *Dissector) dissectRequest() error {
 		message.SetHeartbeat()
 	}
 
-	raw := object.Raw()
-	message.SetRaw(&raw)
 	message.CaptureNow()
 	d.requestC <- message
 	return nil
@@ -81,9 +79,7 @@ func (d *Dissector) dissectResponse() error {
 		return err
 	}
 
-	message.SetResponseObj(object.Pretty())
-	raw := object.Raw()
-	message.SetRaw(&raw)
+	message.SetResponse(object)
 	message.CaptureNow()
 	d.responseC <- message
 	return nil

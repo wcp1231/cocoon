@@ -82,9 +82,7 @@ func (h *RedisRequestMatcher) Match(r common.Message) bool {
 func (h *RedisRequestMatcher) Data() common.Message {
 	message := NewRedisGenericMessage()
 	message.SetMock()
-	message.SetResponseObj(h.respBody.Pretty())
-	raw := h.respBody.Raw()
-	message.Raw = &raw
+	message.SetResponse(h.respBody)
 	return message
 }
 

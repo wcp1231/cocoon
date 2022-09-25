@@ -59,7 +59,7 @@ func readAllFromChan(c chan common.Message) []byte {
 			if !more {
 				return buf.Bytes()
 			}
-			buf.Write(*data.GetRaw())
+			buf.Write(data.GetRaw())
 		}
 	}
 

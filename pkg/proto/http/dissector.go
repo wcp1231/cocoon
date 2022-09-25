@@ -79,9 +79,7 @@ func (d *Dissector) dissectRequest() error {
 	if err != nil {
 		fmt.Println("Http request read raw error", err.Error())
 	}
-	bs := buf.Bytes()
-	message.Raw = &bs
-
+	message.setRaw(buf.Bytes())
 	message.CaptureNow()
 	d.requestC <- message
 	return nil
@@ -114,11 +112,10 @@ func (d *Dissector) dissectResponse() error {
 
 	buf := new(bytes.Buffer)
 	err = response.Write(buf)
-	bs := buf.Bytes()
 	if err != nil {
 		fmt.Println("Http response read raw error", err.Error())
 	}
-	message.Raw = &bs
+	message.setRaw(buf.Bytes())
 
 	message.CaptureNow()
 	d.responseC <- message

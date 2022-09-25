@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"cocoon/pkg/model/common"
-	"cocoon/pkg/proto/mysql/packet"
 	"cocoon/pkg/proto/mysql/proto"
 	"errors"
 	"fmt"
@@ -15,27 +14,19 @@ func (d *Dissector) popRequest() *MysqlMessage {
 }
 
 func (d *Dissector) readResponse() (common.Message, error) {
-	//fmt.Println("Mysql try read response")
 	message, err := d.readCmdQueryResponse()
 	if err != nil {
 		return nil, err
 	}
 
 	if message.HasError() {
-		errbytes := packet.ToPacketBytes(proto.PackERR(message.GetError()))
-		message.Raw = &errbytes
-		// TODO 返回给客户端？
 		return message, nil
 	}
 	if message.HasStmtPrepareOk() {
-		spbytes := proto.PackStmtPrepareOk(message.GetStmtPrepareOk())
-		message.Raw = &spbytes
 		return message, nil
 	}
 	// ok_packet
 	if message.HasOK() {
-		okbytes := packet.ToPacketBytes(proto.PackOK(message.GetOk()))
-		message.Raw = &okbytes
 		return message, nil
 	}
 
@@ -49,8 +40,6 @@ func (d *Dissector) readResponse() (common.Message, error) {
 		}
 		fmt.Println()
 	}
-	raw := proto.PackResultSet(message.GetResultSet(), d.capabilities)
-	message.Raw = &raw
 	return message, nil
 }
 
@@ -63,7 +52,7 @@ func (d *Dissector) readCmdQueryResponse() (*MysqlMessage, error) {
 	data := pkt.Datas
 
 	req := d.popRequest()
-	message.SetRequest(req)
+	message.SetRequestMessage(req)
 	reqCmd := req.Meta["OP_TYPE"]
 
 	// COM_STMT_PREPARE_OK 和 OK_PACKET 似乎很像

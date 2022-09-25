@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"cocoon/pkg/model/common"
+	"cocoon/pkg/proto/mysql/packet"
 	"cocoon/pkg/proto/mysql/proto"
 )
 
@@ -18,7 +19,8 @@ const (
 type MysqlMessage struct {
 	common.GenericMessage
 
-	request *MysqlMessage
+	requestMessage *MysqlMessage // response 处理需要原始 request
+	requestBytes   []byte        // request 发送的原始数据
 }
 
 func NewMysqlGenericMessage() *MysqlMessage {
@@ -27,16 +29,22 @@ func NewMysqlGenericMessage() *MysqlMessage {
 	}
 }
 
-func (m *MysqlMessage) SetRequest(request *MysqlMessage) {
-	m.request = request
+func (m *MysqlMessage) SetRequestMessage(request *MysqlMessage) {
+	m.requestMessage = request
 }
-func (m *MysqlMessage) GetRequest() *MysqlMessage {
-	return m.request
+func (m *MysqlMessage) GetRequestMessage() *MysqlMessage {
+	return m.requestMessage
+}
+func (m *MysqlMessage) SetRequestBytes(requestBytes []byte) {
+	m.requestBytes = requestBytes
 }
 
 func (m *MysqlMessage) SetOpType(opType string) {
 	m.Meta["OP_TYPE"] = opType
 	m.Payload[MYSQL_OP_KEY] = opType
+}
+func (m *MysqlMessage) HasOpType() bool {
+	return m.Payload[MYSQL_OP_KEY] != nil
 }
 func (m *MysqlMessage) GetOpType() string {
 	return m.Payload[MYSQL_OP_KEY].(string)
@@ -85,4 +93,25 @@ func (m *MysqlMessage) HasResultSet() bool {
 }
 func (m *MysqlMessage) GetResultSet() *proto.ResultSet {
 	return m.Payload[MYSQL_RESULT_SET_KEY].(*proto.ResultSet)
+}
+func (m *MysqlMessage) GetRaw() []byte {
+	// request
+	if m.HasOpType() {
+		return m.requestBytes
+	}
+
+	// response
+	if m.HasError() {
+		return packet.ToPacketBytes(proto.PackERR(m.GetError()))
+	}
+	if m.HasStmtPrepareOk() {
+		return proto.PackStmtPrepareOk(m.GetStmtPrepareOk())
+	}
+	if m.HasOK() {
+		return packet.ToPacketBytes(proto.PackOK(m.GetOk()))
+	}
+	if m.HasResultSet() {
+		return proto.PackResultSet(m.GetResultSet())
+	}
+	return nil
 }

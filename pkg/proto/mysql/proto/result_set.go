@@ -7,7 +7,8 @@ import (
 
 type ResultSet struct {
 	// 区分是 TextResultSet 还是 BinaryResultSet
-	rowMode RowMode
+	rowMode      RowMode
+	capabilities uint32
 
 	Columns    uint64
 	ColumnsEOF []byte
@@ -46,8 +47,9 @@ func (r *resultSetReader) read(rowMode RowMode) (*ResultSet, error) {
 	}
 
 	resultSet := &ResultSet{
-		rowMode: rowMode,
-		Columns: columnCount,
+		rowMode:      rowMode,
+		capabilities: r.capabilities,
+		Columns:      columnCount,
 	}
 	err = r.readColumns(resultSet)
 	if err != nil {
@@ -133,12 +135,12 @@ type resultSetWriter struct {
 	capabilities uint32
 }
 
-func PackResultSet(resultSet *ResultSet, capabilities uint32) []byte {
+func PackResultSet(resultSet *ResultSet) []byte {
 	writer := resultSetWriter{
 		buf:          NewBuffer(256),
 		sequenceID:   1,
 		resultSet:    resultSet,
-		capabilities: capabilities,
+		capabilities: resultSet.capabilities,
 	}
 	if resultSet.rowMode == BinaryRowMode {
 		return writer.packBinaryResultSet()

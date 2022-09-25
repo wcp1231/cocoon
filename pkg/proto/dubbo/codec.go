@@ -49,7 +49,7 @@ func ReadPacket(reader *bufio.Reader) (common.Message, error) {
 	copy(raw[len(headerBytes):], body)
 
 	message.Body = &body // FIXME
-	message.Raw = &raw
+	message.setRaw(raw)
 	return message, nil
 }
 

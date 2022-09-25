@@ -20,11 +20,13 @@ const (
 
 type DubboMessage struct {
 	common.GenericMessage
+
+	raw []byte
 }
 
 func NewDubboGenericMessage() *DubboMessage {
 	return &DubboMessage{
-		common.NewGenericMessage(common.PROTOCOL_DUBBO.Name),
+		GenericMessage: common.NewGenericMessage(common.PROTOCOL_DUBBO.Name),
 	}
 }
 
@@ -118,4 +120,10 @@ func formatDubboAttachments(attachments map[string]interface{}) string {
 
 	str, _ := json.Marshal(result)
 	return string(str)
+}
+func (d *DubboMessage) setRaw(raw []byte) {
+	d.raw = raw
+}
+func (d *DubboMessage) GetRaw() []byte {
+	return d.raw
 }

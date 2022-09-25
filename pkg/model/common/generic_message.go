@@ -15,8 +15,7 @@ type Message interface {
 	GetMeta() map[string]string
 	GetHeader() map[string]string
 	GetPayload() map[string]interface{}
-	GetRaw() *[]byte
-	SetRaw(*[]byte)
+	GetRaw() []byte
 	SetMock()
 	String() string
 }
@@ -28,7 +27,6 @@ type GenericMessage struct {
 	Header      map[string]string
 	Payload     map[string]interface{}
 	Body        *[]byte
-	Raw         *[]byte `json:"raw"` // 原始数据 TODO 为啥要用指针？
 }
 
 func (g *GenericMessage) ID() int32 {
@@ -55,12 +53,6 @@ func (g *GenericMessage) GetHeader() map[string]string {
 }
 func (g *GenericMessage) GetPayload() map[string]interface{} {
 	return g.Payload
-}
-func (g *GenericMessage) GetRaw() *[]byte {
-	return g.Raw
-}
-func (g *GenericMessage) SetRaw(raw *[]byte) {
-	g.Raw = raw
 }
 
 func (g *GenericMessage) SetMock() {

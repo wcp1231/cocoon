@@ -127,7 +127,7 @@ func (c *mysqlHandler) handleRawResponse() {
 				zap.String("resp", response.String()))
 
 			mysqlResp := response.(*mysql.MysqlMessage)
-			err := c.handleResponse(mysqlResp.GetRequest(), mysqlResp)
+			err := c.handleResponse(mysqlResp.GetRequestMessage(), mysqlResp)
 			if err != nil {
 				c.server.logger.Warn("Mysql send to client failed", zap.Error(err))
 				continue
@@ -146,7 +146,7 @@ func (c *mysqlHandler) tryToMock(request common.Message) error {
 		return c.requestMockServer(request)
 	}
 
-	return c.sendToServer(*request.GetRaw())
+	return c.sendToServer(request.GetRaw())
 }
 
 // requestMockServer 获取 mock 结果
@@ -155,7 +155,7 @@ func (c *mysqlHandler) requestMockServer(request common.Message) error {
 
 	if result.Pass {
 		c.server.logger.Debug("Send request to origin")
-		return c.sendToServer(*request.GetRaw())
+		return c.sendToServer(request.GetRaw())
 	}
 
 	return c.handleResponse(request, result.Data)
@@ -167,7 +167,7 @@ func (c *mysqlHandler) requestMockServer(request common.Message) error {
 func (c *mysqlHandler) handleResponse(request, response common.Message) error {
 	// record response
 	c.server.recordServer.RecordResponse(request, response)
-	return c.sendToClient(*response.GetRaw())
+	return c.sendToClient(response.GetRaw())
 }
 
 func (c *mysqlHandler) sendToClient(data []byte) error {

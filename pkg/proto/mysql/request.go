@@ -15,12 +15,11 @@ func (d *Dissector) readRequest() (common.Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	raw := pkt.Raw()
-	data := pkt.Datas
-	message := NewMysqlGenericMessage()
-	message.Raw = &raw
-	message.SetOpType(proto.CommandString(data[0]))
 
+	message := NewMysqlGenericMessage()
+	message.SetRequestBytes(pkt.Raw())
+	data := pkt.Datas
+	message.SetOpType(proto.CommandString(data[0]))
 	switch data[0] {
 	case proto.COM_QUIT:
 		break

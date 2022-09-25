@@ -32,10 +32,14 @@ func (m *MongoMessage) SetMongoMessage(message interface{}) {
 func (m *MongoMessage) GetMongoMessage() interface{} {
 	return m.Payload[MONGO_MESSAEG_KEY]
 }
-func (h *MongoMessage) SetOpType(opType string) {
-	h.Payload[MONGO_OP_KEY] = opType
-	h.Meta["OP_TYPE"] = opType
+func (m *MongoMessage) SetOpType(opType string) {
+	m.Payload[MONGO_OP_KEY] = opType
+	m.Meta["OP_TYPE"] = opType
 }
-func (h *MongoMessage) GetOpType() string {
-	return h.Payload[MONGO_OP_KEY].(string)
+func (m *MongoMessage) GetOpType() string {
+	return m.Payload[MONGO_OP_KEY].(string)
+}
+func (m *MongoMessage) GetRaw() []byte {
+	bs, _ := Dump(m)
+	return bs
 }

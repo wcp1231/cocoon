@@ -97,7 +97,7 @@ func (c *requestResponseHandler) requestMockServer(request common.Message) error
 // sendRequestToOriginAndWait 处理 request-response 类型的情况
 // 不支持 steam 或者双向通信类型的情况
 func (c *requestResponseHandler) sendRequestToOriginAndWait(request common.Message) error {
-	_, err := c.outboundConn.c.Write(*request.GetRaw())
+	_, err := c.outboundConn.c.Write(request.GetRaw())
 	if err != nil {
 		c.server.logger.Debug("Send request to origin failed", zap.Error(err))
 	}
@@ -123,8 +123,8 @@ func (c *requestResponseHandler) handleResponse(request, response common.Message
 	return c.sendResponseToInbound(response.GetRaw())
 }
 
-func (c *requestResponseHandler) sendResponseToInbound(data *[]byte) error {
-	_, err := c.inboundConn.c.Write(*data)
+func (c *requestResponseHandler) sendResponseToInbound(data []byte) error {
+	_, err := c.inboundConn.c.Write(data)
 	if err != nil {
 		c.server.logger.Debug("Write back failed", zap.Error(err))
 		return err

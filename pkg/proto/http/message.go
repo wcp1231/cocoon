@@ -19,11 +19,13 @@ const (
 
 type HTTPMessage struct {
 	common.GenericMessage
+
+	raw []byte
 }
 
 func NewHTTPGenericMessage() *HTTPMessage {
 	return &HTTPMessage{
-		common.NewGenericMessage(common.PROTOCOL_HTTP.Name),
+		GenericMessage: common.NewGenericMessage(common.PROTOCOL_HTTP.Name),
 	}
 }
 
@@ -77,4 +79,10 @@ func (h *HTTPMessage) SetBody(body []byte) {
 }
 func (h *HTTPMessage) GetBody() *[]byte {
 	return h.Body
+}
+func (h *HTTPMessage) setRaw(raw []byte) {
+	h.raw = raw
+}
+func (h *HTTPMessage) GetRaw() []byte {
+	return h.raw
 }

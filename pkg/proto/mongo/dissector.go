@@ -51,12 +51,6 @@ func (d *Dissector) dissectRequest() error {
 		return err
 	}
 
-	raw, err := Dump(message)
-	if err != nil {
-		return err
-	}
-
-	message.SetRaw(&raw)
 	message.CaptureNow()
 	d.requestC <- message
 	return nil
@@ -69,11 +63,6 @@ func (d *Dissector) dissectResponse() error {
 		return err
 	}
 
-	raw, err := Dump(message)
-	if err != nil {
-		return err
-	}
-	message.SetRaw(&raw)
 	message.CaptureNow()
 	d.responseC <- message
 	return nil

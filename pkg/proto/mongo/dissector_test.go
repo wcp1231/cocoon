@@ -61,7 +61,7 @@ func readAllFromChan(c chan common.Message, result chan []byte) {
 				result <- buf.Bytes()
 				return
 			}
-			buf.Write(*data.GetRaw())
+			buf.Write(data.GetRaw())
 		}
 	}
 

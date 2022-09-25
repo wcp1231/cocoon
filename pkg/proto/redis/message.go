@@ -12,6 +12,8 @@ const (
 
 type RedisMessage struct {
 	common.GenericMessage
+
+	object RedisObject
 }
 
 func NewRedisGenericMessage() *RedisMessage {
@@ -20,14 +22,13 @@ func NewRedisGenericMessage() *RedisMessage {
 	}
 }
 
-func (m *RedisMessage) SetRequestCmd(request string) {
-	m.Payload[REDIS_REQ_CMD_KEY] = request
+func (m *RedisMessage) SetRequest(request RedisObject) {
+	m.object = request
+	m.Payload[REDIS_REQ_CMD_KEY] = request.Pretty()
 }
-func (m *RedisMessage) GetRequestCmd() string {
-	return m.Payload[REDIS_REQ_CMD_KEY].(string)
-}
-func (m *RedisMessage) SetResponseObj(obj string) {
-	m.Payload[REDIS_RESP_OBJ_KEY] = obj
+func (m *RedisMessage) SetResponse(response RedisObject) {
+	m.object = response
+	m.Payload[REDIS_RESP_OBJ_KEY] = response.Pretty()
 }
 func (m *RedisMessage) GetResponseObj() string {
 	return m.Payload[REDIS_RESP_OBJ_KEY].(string)
@@ -53,4 +54,7 @@ func (m *RedisMessage) SetKey(key string) {
 }
 func (m *RedisMessage) GetKey() string {
 	return m.Payload[REDIS_KEY_KEY].(string)
+}
+func (m *RedisMessage) GetRaw() []byte {
+	return m.object.Raw()
 }
