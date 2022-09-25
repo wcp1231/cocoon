@@ -1,26 +1,72 @@
 package http
 
 import (
+	"bytes"
 	"cocoon/pkg/model/common"
+	"io"
 	"net/http"
-	"strconv"
-	"strings"
+	"net/url"
 )
 
 const (
+	HTTP_REQUEST_KEY  = "HTTP_REQUEST"
+	HTTP_RESPONSE_KEY = "HTTP_RESPONSE"
+
 	HTTP_STATUS_KEY = "HTTP_STATUS"
-	HTTP_HOST_KEY   = "HTTP_HOST"
-	HTTP_METHOD_KEY = "HTTP_METHOD"
-	HTTP_URL_KEY    = "HTTP_URL"
-	HTTP_PROTO_KEY  = "HTTP_PROTO"
 	HTTP_HEADER_KEY = "HTTP_HEADERS"
 	HTTP_BODY_KEY   = "HTTP_BODY"
 )
 
+type HttpReuqest struct {
+	Header http.Header
+	Host   string
+	Method string
+	URL    string
+	Body   []byte
+}
+
+func (r *HttpReuqest) raw() []byte {
+	uri, _ := url.Parse(r.URL)
+	request := &http.Request{
+		Method: r.Method,
+		Host:   r.Host,
+		Header: r.Header,
+		URL:    uri,
+	}
+	bodyBuf := bytes.NewBuffer(r.Body)
+	request.Body = io.NopCloser(bodyBuf)
+	buf := new(bytes.Buffer)
+	_ = request.Write(buf)
+	return buf.Bytes()
+}
+
+type HttpResponse struct {
+	StatusCode int
+	Proto      string
+	ProtoMajor int
+	ProtoMinor int
+	Header     http.Header
+	Body       []byte
+}
+
+func (r *HttpResponse) raw() []byte {
+	response := &http.Response{
+		StatusCode: r.StatusCode,
+		Proto:      r.Proto,
+		ProtoMajor: r.ProtoMajor,
+		ProtoMinor: r.ProtoMinor,
+		Header:     r.Header,
+	}
+	bodyBuf := bytes.NewBuffer(r.Body)
+	response.ContentLength = int64(bodyBuf.Len())
+	response.Body = io.NopCloser(bodyBuf)
+	buf := new(bytes.Buffer)
+	_ = response.Write(buf)
+	return buf.Bytes()
+}
+
 type HTTPMessage struct {
 	common.GenericMessage
-
-	raw []byte
 }
 
 func NewHTTPGenericMessage() *HTTPMessage {
@@ -29,60 +75,35 @@ func NewHTTPGenericMessage() *HTTPMessage {
 	}
 }
 
+func (h *HTTPMessage) SetRequest(request *HttpReuqest) {
+	h.Payload[HTTP_REQUEST_KEY] = request
+}
+func (h *HTTPMessage) SetResponse(response *HttpResponse) {
+	h.Payload[HTTP_RESPONSE_KEY] = response
+}
+
 func (h *HTTPMessage) SetStatusCode(code int) {
 	h.Payload[HTTP_STATUS_KEY] = code
-	h.Meta["STATUS"] = strconv.Itoa(code)
 }
 func (h *HTTPMessage) GetStatusCode() int {
 	return h.Payload[HTTP_STATUS_KEY].(int)
 }
-func (h *HTTPMessage) SetHost(host string) {
-	h.Payload[HTTP_HOST_KEY] = host
-	h.Meta["HOST"] = host
-}
-func (h *HTTPMessage) GetHost() string {
-	return h.Payload[HTTP_HOST_KEY].(string)
-}
-func (h *HTTPMessage) SetMethod(method string) {
-	h.Payload[HTTP_METHOD_KEY] = method
-	h.Meta["METHOD"] = method
-}
-func (h *HTTPMessage) GetMethod() string {
-	return h.Payload[HTTP_METHOD_KEY].(string)
-}
-func (h *HTTPMessage) SetUrl(url string) {
-	h.Payload[HTTP_URL_KEY] = url
-	h.Meta["URL"] = url // 过渡
-}
-func (h *HTTPMessage) GetUrl() string {
-	return h.Payload[HTTP_URL_KEY].(string)
-}
-func (h *HTTPMessage) SetProto(proto string) {
-	h.Payload[HTTP_PROTO_KEY] = proto
-	h.Meta["PROTO"] = proto
-}
-func (h *HTTPMessage) GetProto() string {
-	return h.Payload[HTTP_PROTO_KEY].(string)
-}
 func (h *HTTPMessage) SetHttpHeader(header http.Header) {
 	h.Payload[HTTP_HEADER_KEY] = header
-	for k, vv := range header {
-		h.Header[k] = strings.Join(vv, ";")
-	}
 }
 func (h *HTTPMessage) GetHttpHeader() http.Header {
 	return h.Payload[HTTP_HEADER_KEY].(http.Header)
 }
 func (h *HTTPMessage) SetBody(body []byte) {
 	h.Payload[HTTP_BODY_KEY] = string(body)
-	h.Body = &body
+	h.Body = body
 }
-func (h *HTTPMessage) GetBody() *[]byte {
+func (h *HTTPMessage) GetBody() []byte {
 	return h.Body
 }
-func (h *HTTPMessage) setRaw(raw []byte) {
-	h.raw = raw
-}
 func (h *HTTPMessage) GetRaw() []byte {
-	return h.raw
+	if h.Payload[HTTP_REQUEST_KEY] != nil {
+		return h.Payload[HTTP_REQUEST_KEY].(*HttpReuqest).raw()
+	}
+	return h.Payload[HTTP_RESPONSE_KEY].(*HttpResponse).raw()
 }

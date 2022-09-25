@@ -2,7 +2,6 @@ package http
 
 import (
 	"bufio"
-	"bytes"
 	"cocoon/pkg/model/common"
 	"fmt"
 	"io"
@@ -51,7 +50,7 @@ func (d *Dissector) StartResponseDissect(reader *bufio.Reader) {
 func (d *Dissector) dissectRequest() error {
 	message := NewHTTPGenericMessage()
 
-	request, err := http.ReadRequest(d.reqReader)
+	httpRequest, err := d.parseRequest(d.reqReader)
 	if err != nil {
 		if err == io.EOF {
 			// conn close
@@ -59,27 +58,9 @@ func (d *Dissector) dissectRequest() error {
 		}
 		fmt.Println("Http request dissect error", err.Error())
 		return err
-		// TODO response 500?
 	}
 
-	message.SetHttpHeader(request.Header)
-	message.SetHost(request.Host)
-	message.SetMethod(request.Method)
-	message.SetUrl(request.URL.String())
-
-	body, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		fmt.Println("Http request read body error", err.Error())
-	}
-	message.SetBody(body)
-	request.Body = io.NopCloser(bytes.NewBuffer(body))
-
-	buf := new(bytes.Buffer)
-	err = request.Write(buf)
-	if err != nil {
-		fmt.Println("Http request read raw error", err.Error())
-	}
-	message.setRaw(buf.Bytes())
+	message.SetRequest(httpRequest)
 	message.CaptureNow()
 	d.requestC <- message
 	return nil
@@ -88,7 +69,7 @@ func (d *Dissector) dissectRequest() error {
 func (d *Dissector) dissectResponse() error {
 	message := NewHTTPGenericMessage()
 
-	response, err := http.ReadResponse(d.respReader, nil)
+	httpResponse, err := d.parseResponse(d.respReader)
 	if err != nil {
 		if err == io.ErrUnexpectedEOF {
 			// conn close
@@ -96,28 +77,49 @@ func (d *Dissector) dissectResponse() error {
 		}
 		fmt.Printf("Http response dissect error %v\n", err)
 		return err
-		// TODO response 500?
 	}
 
-	message.SetHttpHeader(response.Header)
-	message.SetStatusCode(response.StatusCode)
-	message.SetProto(response.Proto)
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		fmt.Println("Http request read body error", err.Error())
-	}
-	message.SetBody(body)
-	response.Body = io.NopCloser(bytes.NewBuffer(body))
-
-	buf := new(bytes.Buffer)
-	err = response.Write(buf)
-	if err != nil {
-		fmt.Println("Http response read raw error", err.Error())
-	}
-	message.setRaw(buf.Bytes())
-
+	message.SetResponse(httpResponse)
 	message.CaptureNow()
 	d.responseC <- message
 	return nil
+}
+
+func (d *Dissector) parseRequest(r *bufio.Reader) (*HttpReuqest, error) {
+	request, err := http.ReadRequest(r)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		return nil, err
+	}
+	result := &HttpReuqest{
+		Header: request.Header,
+		Host:   request.Host,
+		Method: request.Method,
+		URL:    request.URL.String(),
+		Body:   body,
+	}
+	return result, nil
+}
+
+func (d *Dissector) parseResponse(r *bufio.Reader) (*HttpResponse, error) {
+	response, err := http.ReadResponse(r, nil)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	result := &HttpResponse{
+		StatusCode: response.StatusCode,
+		Proto:      response.Proto,
+		ProtoMajor: response.ProtoMajor,
+		ProtoMinor: response.ProtoMinor,
+		Header:     response.Header,
+		Body:       body,
+	}
+	return result, nil
 }

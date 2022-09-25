@@ -1,10 +1,8 @@
 package http
 
 import (
-	"bytes"
 	"cocoon/pkg/model/common"
 	"cocoon/pkg/model/mock"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -90,32 +88,22 @@ func (h *HttpRequestMatcher) Match(r common.Message) bool {
 }
 
 func (h *HttpRequestMatcher) Data() common.Message {
-	response := http.Response{}
-	response.StatusCode = h.status
-	response.Header = http.Header{}
-	response.ProtoMajor = 1
-	response.ProtoMinor = 1
-
-	message := NewHTTPGenericMessage()
-	message.SetMock()
-	message.SetStatusCode(h.status)
+	resp := &HttpResponse{}
+	resp.StatusCode = h.status
+	resp.ProtoMajor = 1
+	resp.ProtoMinor = 1
+	resp.Header = http.Header{}
 	//headers := make(map[string][]string)
 	for k, v := range h.respHeader {
 		//headers[k] = strings.Split(v, ";;")
-		response.Header[k] = strings.Split(v, ";;")
+		resp.Header[k] = strings.Split(v, ";;")
 	}
 	//message.SetHttpHeader(headers)
-	message.SetHttpHeader(response.Header)
 
-	body := []byte(h.respBody)
-	message.SetBody(body)
-
-	bodyBuf := bytes.NewBuffer(body)
-	response.ContentLength = int64(bodyBuf.Len())
-	response.Body = io.NopCloser(bodyBuf)
-	buf := new(bytes.Buffer)
-	_ = response.Write(buf)
-	message.setRaw(buf.Bytes())
+	resp.Body = []byte(h.respBody)
+	message := NewHTTPGenericMessage()
+	message.SetMock()
+	message.SetResponse(resp)
 	return message
 }
 

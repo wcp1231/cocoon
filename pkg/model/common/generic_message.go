@@ -1,7 +1,6 @@
 package common
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -11,7 +10,7 @@ type Message interface {
 	SetId(int32)
 	CaptureNow()
 	GetCaptureTime() time.Time
-	GetBody() *[]byte
+	GetBody() []byte
 	GetMeta() map[string]string
 	GetHeader() map[string]string
 	GetPayload() map[string]interface{}
@@ -26,7 +25,7 @@ type GenericMessage struct {
 	Meta        map[string]string
 	Header      map[string]string
 	Payload     map[string]interface{}
-	Body        *[]byte
+	Body        []byte
 }
 
 func (g *GenericMessage) ID() int32 {
@@ -42,7 +41,7 @@ func (g *GenericMessage) CaptureNow() {
 func (g *GenericMessage) GetCaptureTime() time.Time {
 	return g.CaptureTime
 }
-func (g *GenericMessage) GetBody() *[]byte {
+func (g *GenericMessage) GetBody() []byte {
 	return g.Body
 }
 func (g *GenericMessage) GetMeta() map[string]string {
@@ -61,16 +60,6 @@ func (g *GenericMessage) SetMock() {
 
 func (g *GenericMessage) String() string {
 	return fmt.Sprintf("[%d] Header=%d", g.Id, len(g.Header))
-}
-
-func (g *GenericMessage) ToJSON() ([]byte, error) {
-	result := map[string]interface{}{
-		"id":          g.Id,
-		"captureTime": g.CaptureTime,
-		"header":      g.Header,
-		"body":        g.Body,
-	}
-	return json.Marshal(result)
 }
 
 func NewGenericMessage(protocol string) GenericMessage {

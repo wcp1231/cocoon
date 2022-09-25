@@ -26,7 +26,7 @@ type Dissector struct {
 	responseC  chan common.Message
 }
 
-type dubboHeader struct {
+type DubboHeader struct {
 	SerialID       byte
 	Type           PackageType
 	ID             int64
@@ -34,37 +34,37 @@ type dubboHeader struct {
 	ResponseStatus byte
 }
 
-type dubboRequest struct {
-	header         *dubboHeader
-	dubboVersion   string
-	target         string
-	serviceVersion string
-	method         string
-	args           map[string]interface{}
-	attachments    map[string]interface{}
+type DubboRequest struct {
+	Header         *DubboHeader
+	DubboVersion   string
+	Target         string
+	ServiceVersion string
+	Method         string
+	Args           map[string]interface{}
+	Attachments    map[string]interface{}
 }
 
-type dubboResponse struct {
-	header       *dubboHeader
-	dubboVersion string
-	exception    string
-	respObj      interface{}
-	attachments  map[string]interface{}
+type DubboResponse struct {
+	Header       *DubboHeader
+	DubboVersion string
+	Exception    string
+	RespObj      interface{}
+	Attachments  map[string]interface{}
 }
 
-func (d *dubboHeader) isRequest() bool {
+func (d *DubboHeader) isRequest() bool {
 	return d.Type&PackageRequest != 0x00
 }
 
-func (d *dubboHeader) isResponse() bool {
+func (d *DubboHeader) isResponse() bool {
 	return d.Type&PackageResponse != 0x00
 }
 
-func (d *dubboHeader) isHeartbeat() bool {
+func (d *DubboHeader) isHeartbeat() bool {
 	return d.Type&PackageHeartbeat != 0x00
 }
 
-func (d *dubboHeader) hasException() bool {
+func (d *DubboHeader) hasException() bool {
 	return d.Type&PackageResponse_Exception != 0x00
 }
 

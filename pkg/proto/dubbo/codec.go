@@ -28,19 +28,11 @@ func ReadPacket(reader *bufio.Reader) (common.Message, error) {
 	} else if header.isRequest() {
 		request, err := readRequestBody(header, body)
 		fmt.Printf("Dubbo body decode. err=%v, request=%+v\n", err, request)
-		message.SetDubboVersion(request.dubboVersion)
-		message.SetServiceVersion(request.serviceVersion)
-		message.SetMethod(request.method)
-		message.SetTarget(request.target)
-		message.SetArgs(request.args)
-		message.SetAttachments(request.attachments)
+		message.SetRequest(request)
 	} else {
 		response, err := readResponseBody(header, body)
 		fmt.Printf("Dubbo body decode. err=%v, response=%+v\n", err, response)
-		message.SetDubboVersion(response.dubboVersion)
-		message.SetException(response.exception)
-		message.SetResponse(response.respObj)
-		message.SetAttachments(response.attachments)
+		message.SetResponse(response)
 	}
 
 	headerBytes := EncodeHeader(header)
@@ -48,13 +40,13 @@ func ReadPacket(reader *bufio.Reader) (common.Message, error) {
 	copy(raw, headerBytes)
 	copy(raw[len(headerBytes):], body)
 
-	message.Body = &body // FIXME
+	message.Body = body // FIXME
 	message.setRaw(raw)
 	return message, nil
 }
 
-func ReadHeader(reader *bufio.Reader) (*dubboHeader, error) {
-	header := &dubboHeader{}
+func ReadHeader(reader *bufio.Reader) (*DubboHeader, error) {
+	header := &DubboHeader{}
 	var err error
 	buf, err := reader.Peek(HEADER_LENGTH)
 	if err != nil { // this is impossible
@@ -106,7 +98,7 @@ func ReadHeader(reader *bufio.Reader) (*dubboHeader, error) {
 	return header, err
 }
 
-func EncodeHeader(header *dubboHeader) []byte {
+func EncodeHeader(header *DubboHeader) []byte {
 	bs := make([]byte, 0)
 	switch {
 	case header.isHeartbeat():
@@ -129,9 +121,9 @@ func EncodeHeader(header *dubboHeader) []byte {
 	return bs
 }
 
-func readRequestBody(header *dubboHeader, bb []byte) (*dubboRequest, error) {
-	request := &dubboRequest{
-		header: header,
+func readRequestBody(header *DubboHeader, bb []byte) (*DubboRequest, error) {
+	request := &DubboRequest{
+		Header: header,
 	}
 	decoder := hessian.NewDecoder(bb)
 	dubboVersion, err := decoder.Decode()
@@ -139,40 +131,40 @@ func readRequestBody(header *dubboHeader, bb []byte) (*dubboRequest, error) {
 		return nil, err
 	}
 	if dubboVersion != nil {
-		request.dubboVersion = dubboVersion.(string)
+		request.DubboVersion = dubboVersion.(string)
 	}
 	target, err := decoder.Decode()
 	if err != nil {
 		return nil, err
 	}
-	request.target = target.(string)
+	request.Target = target.(string)
 	serviceVersion, err := decoder.Decode()
 	if err != nil {
 		return nil, err
 	}
-	request.serviceVersion = serviceVersion.(string)
+	request.ServiceVersion = serviceVersion.(string)
 	method, err := decoder.Decode()
 	if err != nil {
 		return nil, err
 	}
-	request.method = method.(string)
+	request.Method = method.(string)
 	args, err := readRequestArgs(decoder)
 	if err != nil {
 		return nil, err
 	}
-	request.args = args
+	request.Args = args
 	attachements, err := readAttachments(decoder)
 	if err != nil {
 		return nil, err
 	}
-	request.attachments = attachements
+	request.Attachments = attachements
 
 	return request, nil
 }
 
-func readResponseBody(header *dubboHeader, bb []byte) (*dubboResponse, error) {
-	response := &dubboResponse{
-		header: header,
+func readResponseBody(header *DubboHeader, bb []byte) (*DubboResponse, error) {
+	response := &DubboResponse{
+		Header: header,
 	}
 
 	decoder := hessian.NewDecoder(bb)
@@ -181,7 +173,7 @@ func readResponseBody(header *dubboHeader, bb []byte) (*dubboResponse, error) {
 		if err != nil {
 			return nil, err
 		}
-		response.exception = exception.(string)
+		response.Exception = exception.(string)
 		return response, nil
 	}
 
@@ -195,13 +187,13 @@ func readResponseBody(header *dubboHeader, bb []byte) (*dubboResponse, error) {
 		if err != nil {
 			return nil, err
 		}
-		response.exception = exception.(string)
+		response.Exception = exception.(string)
 		if respType == RESPONSE_WITH_EXCEPTION_WITH_ATTACHMENTS {
 			attachements, err := readAttachments(decoder)
 			if err != nil {
 				return nil, err
 			}
-			response.attachments = attachements
+			response.Attachments = attachements
 		}
 		return response, nil
 	}
@@ -211,24 +203,24 @@ func readResponseBody(header *dubboHeader, bb []byte) (*dubboResponse, error) {
 		if err != nil {
 			return nil, err
 		}
-		response.respObj = resp
+		response.RespObj = resp
 		if respType == RESPONSE_VALUE_WITH_ATTACHMENTS {
 			attachements, err := readAttachments(decoder)
 			if err != nil {
 				return nil, err
 			}
-			response.attachments = attachements
+			response.Attachments = attachements
 		}
 		return response, nil
 	}
 
-	response.respObj = nil
+	response.RespObj = nil
 	if respType == RESPONSE_NULL_VALUE_WITH_ATTACHMENTS {
 		attachements, err := readAttachments(decoder)
 		if err != nil {
 			return nil, err
 		}
-		response.attachments = attachements
+		response.Attachments = attachements
 	}
 
 	return response, nil

@@ -23,7 +23,7 @@ func fromGenericMessage(message common.Message, isRequest bool) *record {
 	body := ""
 	mbytes := message.GetBody()
 	if mbytes != nil {
-		body = string(*mbytes) // FIXME
+		body = string(mbytes) // FIXME
 	}
 	return &record{
 		Id:          message.ID(),
