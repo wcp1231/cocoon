@@ -11,14 +11,29 @@
           <DataTable ref="datatable"
                      v-model:value="records"
                      v-model:expandedRows="expandedRows"
+                     selectionMode="single"
+                     v-model:selection="selectedRecord"
+                     @rowSelect="onRowSelect"
                      :scrollable="true"
+                     v-model:filters="filters"
+                     filterDisplay="menu"
                      scrollHeight="800px"
                      class="record-table">
-            <Column :expander="true" headerStyle="flex: 0 0 45px;" bodyStyle="flex: 0 0 45px;" headerClass="expander-column" bodyClass="expander-column"/>
-            <Column field="id" header="ID" headerStyle="flex: 0 0 60px;" bodyStyle="flex: 0 0 60px;"></Column>
-            <Column field="protocol" header="Proto" filterField="protocol" headerStyle="flex: 0 0 80px;" bodyStyle="flex: 0 0 80px;">
+            <Column field="id" header="ID" headerStyle="flex: 0 0 60px; padding-left: 0.5rem" bodyStyle="flex: 0 0 60px; padding-left: 0.5rem"></Column>
+            <Column field="protocol" header="Proto" filterField="protocol"
+                    :showFilterMatchModes="false" headerStyle="flex: 0 0 80px;" bodyStyle="flex: 0 0 80px;"
+                    filterMenuClass="protocol-filter">
               <template #body="slotProps">
                 <tag :class="`protocol-tag protocol-${slotProps.data.protocol}-tag`">{{ slotProps.data.protocol }}</tag>
+              </template>
+              <template #filter="{filterModel}">
+                <Listbox v-model="filterModel.value" :multiple="true"
+                         :options="protocols" optionLabel="val" optionValue="val"
+                         class="protocol-filter-list">
+                  <template #option="slotProps">
+                    <tag :class="`protocol-tag protocol-${slotProps.option.val}-tag`">{{ slotProps.option.val }}</tag>
+                  </template>
+                </Listbox>
               </template>
             </Column>
             <Column field="request" header="Request" headerStyle="flex: 5;" bodyStyle="overflow-wrap: anywhere; flex: 5;">
@@ -36,19 +51,29 @@
                 <timespan-column-item :timespan="slotProps.data.timespan" />
               </template>
             </Column>
-            <template #expansion="slotProps">
-              <div class="row-expansion-panel">
-                <http-record-detail-panel v-if="slotProps.data.protocol === 'HTTP'" :record="slotProps.data" />
-                <redis-record-detail-panel v-if="slotProps.data.protocol === 'Redis'" :record="slotProps.data" />
-                <dubbo-record-detail-panel v-if="slotProps.data.protocol === 'Dubbo'" :record="slotProps.data" />
-                <mongo-record-detail-panel v-if="slotProps.data.protocol === 'Mongo'" :record="slotProps.data" />
-                <mysql-record-detail-panel v-if="slotProps.data.protocol === 'Mysql'" :record="slotProps.data" />
-              </div>
-            </template>
           </DataTable>
 <!--        </div>-->
       </template>
     </card>
+    <Sidebar
+        class="detail-sidebar"
+        v-model:visible="sidebarVisible"
+        :dismissable="false"
+        :modal="false"
+        position="right">
+      <template #header>
+        <tag :class="`protocol-tag protocol-${selectedRecord.protocol}-tag`" style="margin-right: 2rem">{{ selectedRecord.protocol }}</tag>
+
+        <response-column-item :protocol="selectedRecord.protocol" :request="selectedRecord.request" :response="selectedRecord.response" />
+        <timespan-column-item :timespan="selectedRecord.timespan" style="margin-left: 2rem" />
+      </template>
+      <http-record-detail-panel v-if="selectedRecord.protocol === 'HTTP'" :record="selectedRecord" />
+      <redis-record-detail-panel v-if="selectedRecord.protocol === 'Redis'" :record="selectedRecord" />
+      <dubbo-record-detail-panel v-if="selectedRecord.protocol === 'Dubbo'" :record="selectedRecord" />
+      <mongo-record-detail-panel v-if="selectedRecord.protocol === 'Mongo'" :record="selectedRecord" />
+      <mysql-record-detail-panel v-if="selectedRecord.protocol === 'Mysql'" :record="selectedRecord" />
+      {{ selectedRecord }}
+    </Sidebar>
   </div>
 </template>
 
@@ -57,6 +82,9 @@ import { defineComponent } from "vue";
 import Card from "primevue/card";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
+import {FilterMatchMode} from 'primevue/api';
+import Listbox from 'primevue/listbox';
+import Sidebar from 'primevue/sidebar';
 import Tag from "primevue/tag";
 //@ts-ignore
 import store from "@/store/index";
@@ -74,7 +102,10 @@ export default defineComponent({
   props: {},
   data() {
     return {
-      expandedRows: []
+      filters: null,
+      expandedRows: [],
+      sidebarVisible: false,
+      selectedRecord: {},
     };
   },
   computed: {
@@ -83,6 +114,10 @@ export default defineComponent({
     },
     recordLen() {
       return store.state.records.length;
+    },
+    protocols() {
+      return [...new Set(store.state.records.map(r => r.protocol))]
+          .map((p, i) => { return { id: i, val: p }; });
     }
   },
   watch: {
@@ -95,12 +130,28 @@ export default defineComponent({
       console.log(`watch. ${this.records.length}`)
     }
   },
+  created() {
+    this.initFilters();
+  },
   methods: {
+    onRowSelect() {
+      this.sidebarVisible = true;
+    },
+    clearFilters() {
+      this.initFilters();
+    },
+    initFilters() {
+      this.filters = {
+        protocol: { value: null, matchMode: FilterMatchMode.IN }
+      };
+    }
   },
   components: {
     Card,
     Column,
     DataTable,
+    Listbox,
+    Sidebar,
     Tag,
     RequestColumnItem,
     ResponseColumnItem,
@@ -150,10 +201,17 @@ export default defineComponent({
   color: #6c757d
 }
 .record-card.p-card .p-card-body {
-  padding-top: 0;
+  padding: 0;
+}
+.record-card.p-card .p-card-content {
+  padding: 0;
 }
 .record-table .p-datatable-table .expander-column {
   padding: 5px;
+}
+.record-table .p-datatable-table .p-datatable-tbody > tr.p-highlight {
+  background: #EFF6FF;
+  color: #1D4ED8;
 }
 .row-expansion-panel .p-accordion.p-component a.p-accordion-header-link {
   padding: 8px 10px;
@@ -163,5 +221,18 @@ export default defineComponent({
 }
 .record-table.p-datatable .p-datatable-tbody > tr > td {
   padding: 0.5rem 0;
+}
+.p-sidebar-right.detail-sidebar {
+  width: 45%;
+}
+.p-sidebar-right.detail-sidebar .p-sidebar-header {
+  justify-content: space-between;
+}
+
+.protocol-filter.p-column-filter-overlay-menu .p-column-filter-buttonbar {
+  padding-top: 0;
+}
+.protocol-filter-list.p-listbox .p-listbox-list {
+  padding: 0;
 }
 </style>

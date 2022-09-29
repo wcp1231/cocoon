@@ -11,7 +11,7 @@
     "axios": "^0.25.0",
     "core-js": "^3.6.5",
     "primeicons": "^5.0.0",
-    "primevue": "^3.11.0",
+    "primevue": "^3.17.0",
     "vue": "^3.0.0",
     "vue-native-websocket-vue3": "^3.1.4",
     "vuex": "^4.0.2"

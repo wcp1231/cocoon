@@ -68,7 +68,7 @@ export default defineComponent({
       });
     } else if (props.protocol === 'Mongo') {
       status = computed(() => {
-        let ok = checkResponse(props.response, "body");
+        let ok = getValueFromPayload(props.response, "MONGO_MESSAGE");
         return ok ? "OK": "PENDING";
       });
     } else if (props.protocol === 'Mysql') {
@@ -84,11 +84,16 @@ export default defineComponent({
     let mock = computed(() => getValueFromMeta(props.response, "MOCK") )
     if (mock.value) {
       return () => (
-          <div><span class={`response-status-tag response-status-tag-${status.value}`}>{ status.value }</span><Tag severity="info">MOCK</Tag></div>
+          <>
+            <span class={`response-status-tag response-status-tag-${status.value}`}>{ status.value }</span>
+            <Tag severity="info">MOCK</Tag>
+          </>
       )
     }
     return () => (
-        <div><span class={`response-status-tag response-status-tag-${status.value}`} >{ status.value }</span></div>
+        <>
+          <span class={`response-status-tag response-status-tag-${status.value}`} >{ status.value }</span>
+        </>
     );
   },
   components: {

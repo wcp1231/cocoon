@@ -1,28 +1,10 @@
 <template>
   <div class="request-column">
-    <template v-if="protocol === 'HTTP'">
-      <span class="request-column-tag">{{ request.meta['METHOD'] }}</span>
-      <span class="request-column-info">{{ request.meta['HOST'] + request.meta['URL'] }}</span>
-    </template>
-    <template v-else-if="protocol === 'Redis'">
-      <span class="request-column-tag">{{ request.payload['REDIS_CMD'] }}</span>
-      <span class="request-column-info">{{ request.payload['REDIS_KEY'] }}</span>
-    </template>
-    <template v-else-if="protocol === 'Dubbo'">
-      <span v-if="request.meta['HEARTBEAT']" class="request-column-tag">HeartBeat</span>
-      <template v-else>
-        <span class="request-column-tag">Invoke</span>
-        <span class="request-column-info">{{ `${request.header['target']}#${request.header['method']}` }}</span>
-      </template>
-    </template>
-    <template v-else-if="protocol === 'Mongo'">
-      <span class="request-column-tag">{{ request.meta["OP_TYPE"] }}</span>
-      <span class="request-column-info">{{ `${request.meta["COLLECTION"]} ${request.meta["QUERY"]}` }}</span>
-    </template>
-    <template v-else-if="protocol === 'Mysql'">
-      <span class="request-column-tag">{{ request.payload["MYSQL_OP_TYPE"] }}</span>
-      <span class="request-column-info">{{ request.payload["MYSQL_QUERY"] }}</span>
-    </template>
+    <dubbo-brief-request-column v-if="protocol === 'Dubbo'" :request="request" />
+    <http-brief-request-column v-else-if="protocol === 'HTTP'" :request="request" />
+    <redis-brief-request-column v-else-if="protocol === 'Redis'" :request="request" />
+    <mongo-brief-request-column v-else-if="protocol === 'Mongo'" :request="request" />
+    <mysql-brief-request-column v-else-if="protocol === 'Mysql'" :request="request" />
     <template v-else>
       {{ request }}
     </template>
@@ -31,6 +13,12 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import DubboBriefRequestColumn from "@/components/record/dubbo/DubboBriefRequestColumn.vue";
+import HttpBriefRequestColumn from "@/components/record/http/HttpBriefRequestColumn.vue";
+import MongoBriefRequestColumn from "@/components/record/mongo/MongoBriefRequestColumn.vue";
+import MysqlBriefRequestColumn from "@/components/record/mysql/MysqlBriefRequestColumn.vue";
+import RedisBriefRequestColumn from "@/components/record/redis/RedisBriefRequestColumn.vue";
+
 
 export default defineComponent({
   name: "RequestColumnItem",
@@ -47,12 +35,17 @@ export default defineComponent({
   methods: {
   },
   components: {
+    DubboBriefRequestColumn,
+    MysqlBriefRequestColumn,
+    HttpBriefRequestColumn,
+    MongoBriefRequestColumn,
+    RedisBriefRequestColumn,
   },
 });
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+<style>
 .request-column-tag {
   margin-right:1rem;
 
