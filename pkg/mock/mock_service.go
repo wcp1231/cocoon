@@ -48,6 +48,13 @@ func (m *MockService) AddImposter(proto string, importer RequestImposter) {
 	m.logger.Info("Add imposter", zap.String("proto", proto), zap.String("map", fmt.Sprintf("%+v", m.importers)))
 }
 
+func (m *MockService) DeleteAllImposters() {
+	for _, protoImposter := range m.importers {
+		protoImposter.DeleteAllRequestImposters()
+	}
+	m.logger.Info("Delete all imposters")
+}
+
 func (m *MockService) DeleteImposter(id int32) {
 	for _, protoImposter := range m.importers {
 		protoImposter.DeleteRequestImposter(id)

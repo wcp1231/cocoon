@@ -41,6 +41,12 @@ func (i *ProtocolImposter) AddRequestImposter(importer RequestImposter) {
 	i.imposters = append(i.imposters, importer)
 }
 
+func (i *ProtocolImposter) DeleteAllRequestImposters() {
+	i.mutex.Lock()
+	defer i.mutex.Unlock()
+	i.imposters = make([]RequestImposter, 0)
+}
+
 func (i *ProtocolImposter) DeleteRequestImposter(id int32) {
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
