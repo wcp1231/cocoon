@@ -79,6 +79,9 @@ func (h *HTTPMessage) SetRequest(request *HttpReuqest) {
 	h.Payload[HTTP_REQUEST_KEY] = request
 }
 func (h *HTTPMessage) SetResponse(response *HttpResponse) {
+	if response.StatusCode >= 400 {
+		h.MarkException()
+	}
 	h.Payload[HTTP_RESPONSE_KEY] = response
 }
 

@@ -27,6 +27,9 @@ func (m *RedisMessage) SetRequest(request RedisObject) {
 	m.Payload[REDIS_REQ_CMD_KEY] = request.Pretty()
 }
 func (m *RedisMessage) SetResponse(response RedisObject) {
+	if _, ok := response.(*RedisError); ok {
+		m.MarkException()
+	}
 	m.object = response
 	m.Payload[REDIS_RESP_OBJ_KEY] = response.Pretty()
 }

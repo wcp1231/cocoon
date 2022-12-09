@@ -56,6 +56,7 @@ func (m *MysqlMessage) GetQuery() string {
 	return m.Payload[MYSQL_QUERY_KEY].(string)
 }
 func (m *MysqlMessage) SetError(err *proto.ERR) {
+	m.MarkException()
 	m.Payload[MYSQL_ERR_PACKET_KEY] = err
 }
 func (m *MysqlMessage) HasError() bool {

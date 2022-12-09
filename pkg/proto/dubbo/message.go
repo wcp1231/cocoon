@@ -38,8 +38,11 @@ func (d *DubboMessage) SetRequest(request *DubboRequest) {
 func (d *DubboMessage) GetRequest() *DubboRequest {
 	return d.Payload[DUBBO_REQUEST_KEY].(*DubboRequest)
 }
-func (d *DubboMessage) SetResponse(request *DubboResponse) {
-	d.Payload[DUBBO_RESPONSE_KEY] = request
+func (d *DubboMessage) SetResponse(response *DubboResponse) {
+	if response.Exception != "" {
+		d.MarkException()
+	}
+	d.Payload[DUBBO_RESPONSE_KEY] = response
 }
 func (d *DubboMessage) GetResponse() *DubboResponse {
 	return d.Payload[DUBBO_RESPONSE_KEY].(*DubboResponse)

@@ -19,7 +19,7 @@
                      filterDisplay="menu"
                      scrollHeight="800px"
                      class="record-table">
-            <Column field="id" header="ID" headerStyle="flex: 0 0 60px; padding-left: 0.5rem" bodyStyle="flex: 0 0 60px; padding-left: 0.5rem"></Column>
+            <Column field="id" header="ID" :sortable="true" headerStyle="flex: 0 0 60px; padding-left: 0.5rem" bodyStyle="flex: 0 0 60px; padding-left: 0.5rem"></Column>
             <Column field="protocol" header="Proto" filterField="protocol"
                     :showFilterMatchModes="false" headerStyle="flex: 0 0 80px;" bodyStyle="flex: 0 0 80px;"
                     filterMenuClass="protocol-filter">

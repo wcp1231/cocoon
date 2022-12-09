@@ -54,6 +54,10 @@ func (g *GenericMessage) GetPayload() map[string]interface{} {
 	return g.Payload
 }
 
+func (g *GenericMessage) MarkException() {
+	g.Meta["STATUS"] = "exception"
+}
+
 func (g *GenericMessage) SetMock() {
 	g.Meta["MOCK"] = "true"
 }
@@ -69,5 +73,6 @@ func NewGenericMessage(protocol string) GenericMessage {
 		Payload: map[string]interface{}{},
 	}
 	message.Meta["PROTOCOL"] = protocol
+	message.Meta["STATUS"] = "ok"
 	return message
 }
