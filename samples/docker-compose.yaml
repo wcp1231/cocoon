@@ -20,7 +20,7 @@ services:
       MYSQL_PASSWORD: 'cocoon'
     volumes:
       - ./mysql:/var/lib/mysql
-  redis:
-    image: 'docker.io/library/redis:5.0.14'
-    ports:
-      - "6379:6379"
+#  redis:
+#    image: 'docker.io/library/redis:5.0.14'
+#    ports:
+#      - "6379:6379"

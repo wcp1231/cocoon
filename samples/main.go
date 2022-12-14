@@ -63,7 +63,7 @@ func main() {
 
 	http.HandleFunc("/http/get", app.httpGet)
 	http.HandleFunc("/http/post", app.httpPost)
-	http.HandleFunc("/http/sattus", app.httpStatus)
+	http.HandleFunc("/http/status", app.httpStatus)
 	http.HandleFunc("/mongo/find", app.mongoFind)
 	http.HandleFunc("/mongo/insert", app.mongoInsert)
 	http.HandleFunc("/mongo/remove", app.mongoRemove)
