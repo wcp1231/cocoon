@@ -2,7 +2,6 @@ package rpc_server
 
 import (
 	"cocoon/pkg/db"
-	"cocoon/pkg/dissector"
 	"cocoon/pkg/model/rpc"
 	"context"
 	"github.com/smallnest/rpcx/server"
@@ -13,8 +12,8 @@ type RpcServer struct {
 	server *server.Server
 	logger *zap.Logger
 
-	database       *db.Database
-	dissectManager *dissector.DissectManager
+	database *db.Database
+	//dissectManager *dissector.DissectManager
 	//tcpManager     *tcp.TcpManager
 }
 
@@ -23,7 +22,7 @@ func NewRpcServer(logger *zap.Logger, dbUri string) *RpcServer {
 	//resultC := make(chan *traffic.StreamItem, 1024)
 	ctx := context.Background()
 	database := db.NewDatabase(ctx, logger, dbUri)
-	dissectManager := dissector.NewDissectManager(ctx, logger)
+	//dissectManager := dissector.NewDissectManager(ctx, logger)
 	//tcpManager := tcp.NewTcpManager(logger, resultC)
 
 	rpcServer := &RpcServer{
@@ -31,7 +30,7 @@ func NewRpcServer(logger *zap.Logger, dbUri string) *RpcServer {
 		logger:   logger,
 		database: database,
 		//tcpManager:     tcpManager,
-		dissectManager: dissectManager,
+		//dissectManager: dissectManager,
 	}
 
 	handler := NewCocoonHandler(logger, rpcServer)
